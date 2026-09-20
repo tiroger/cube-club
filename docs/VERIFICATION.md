@@ -64,3 +64,14 @@ Ran the complete `scripts/build-dmg.sh` path: rebuilt the release app, prepared 
 Opened the finished DMG through Finder and visually checked the actual installer window. Both native icons sit inside their landing areas, the arrow and instructions are legible, and the complete mascot and footer fit. The window allows space for Finder's title and path bars. A follow-up layout correction moved both icons upward by 18 points; the rebuilt DMG passed packaging checks, and Finder inspection confirmed that both labels clear the rounded borders. App behavior was unchanged by this packaging work.
 
 Both signatures are for local development. The build Mac had no valid Developer ID signing identity; Apple notarization was not attempted. No security settings were changed. The DMG is a local development installer, not a notarized public-distribution release.
+
+
+## Version 0.3.1 — smooth camera preview
+
+Removed the shared five-frame-per-second preview/detection loop. A dedicated preview queue encodes frames at up to 30 fps at 720 pixels wide; a separate Vision queue retains the 960-pixel analysis input and runs at up to 5 Hz. Capture requests 720p when supported. Neither lane can enqueue another job until its consumer finishes; preview delivery waits for WebKit image decoding and drawing. Session generations discard work from stopped cameras. Detection uses the original frame timestamp, with separate ordering and freshness checks from video, so live preview frames cannot keep old color evidence ready for capture. Old outlines expire instead of lingering over new video.
+
+**2,534 checks passed:** the existing 2,510 plus 10 additional bridge checks, 9 native pipeline lifecycle checks, and 5 WebKit performance checks. Held preview acknowledgements, stalled analysis, stop/restart, old stream results, independent sequence numbers, face changes, stale evidence with live video, manual edits, and automatic capture were exercised. Generated Vision fixtures and all solver checks still pass.
+
+The real encoder → native WebKit call → JavaScript Image decode → camera canvas path sustained **30.0 fps**, with **2–5 ms p95 capture-to-draw latency** across two runs, using generated 1280×720 frames in the test window on this build Mac. Analysis was deliberately delayed by 350 ms plus a further 250 ms consumer delay; video continued independently. These are synthetic pipeline measurements, not webcam measurements or a guarantee on other Macs. The user's webcam and physical cube still need a hands-on check after installing the update. The test uses a nonpersistent WebKit data store and never requests camera access or modifies saved learner progress.
+
+Rebuilt and verified `Cube-Club-0.3.1-arm64.dmg`, including both local signatures, exact app contents, image integrity, read-only mounting, Applications shortcut, background, and corrected icon-label positions.

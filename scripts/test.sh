@@ -7,3 +7,6 @@ VISION_TEST_BIN=$(mktemp -d "${TMPDIR:-/tmp}/cube-vision-tests.XXXXXX")
 trap 'rm -rf "$VISION_TEST_BIN"' EXIT
 swiftc -O Sources/CubeClub/CubeVision.swift Tests/vision-tests.swift -o "$VISION_TEST_BIN/vision-tests"
 "$VISION_TEST_BIN/vision-tests"
+
+swiftc -O Sources/CubeClub/CubeVision.swift Sources/CubeClub/CameraFramePipeline.swift Tests/camera-pipeline-tests.swift -o "$VISION_TEST_BIN/camera-pipeline-tests"
+"$VISION_TEST_BIN/camera-pipeline-tests"

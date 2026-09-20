@@ -13,11 +13,11 @@ To build from source, install Xcode or Apple’s Swift command line tools, then 
 open "build/Cube Club.app"
 ```
 
-You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera: it contains the camera permission description and a stable app identity. Version 0.3 adds on-device cube-face detection, perspective correction, steady automatic capture, and optional color calibration to both scanning and move checks. No npm install, remote service, API key, or account is needed. Building on an Intel Mac produces an Intel build.
+You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera: it contains the camera permission description and a stable app identity. Version 0.3 adds on-device cube-face detection, perspective correction, steady automatic capture, and optional color calibration to both scanning and move checks. Version 0.3.1 separates preview and detection: video targets 30 fps while cube analysis runs up to 5 times per second. Slow analysis or a busy interface drops intermediate frames instead of queuing delayed video. No npm install, remote service, API key, or account is needed. Building on an Intel Mac produces an Intel build.
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.3.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.3.1-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -93,7 +93,7 @@ The scan solver uses Kociemba’s two-phase algorithm through cube.js. It finds 
 ./scripts/test.sh
 ```
 
-Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional package installation. Native image tests require access to macOS graphics services; a restricted headless sandbox can return empty image buffers. The suite checks:
+Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional package installation. Native image tests require access to macOS graphics services; a restricted headless sandbox can return empty image buffers. The suite also opens a temporary WebKit window with generated frames to measure preview throughput under slow detection; it does not open the camera or use learner data. The suite checks:
 
 - All 18 rendered move permutations against the cubie model (972 sticker checks).
 - Algorithm inverse setups, quiz data, daisy petals, Sune orientation, and middle-layer insertion setup.
@@ -105,7 +105,8 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Seven legal challenge cases, complete shared-round state transitions, uncertain camera patches, and migration of existing saved progress.
 - Native detection of generated flat, tilted, off-center, and solved-color faces; perspective-corrected sampling; independent preview row-order checks; and rejection of blank, tiny, clipped, and heavily occluded faces.
 - Color calibration, exposure variation, glare, temporal agreement, movement, interruptions, and wrong centers.
-- Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order frames, calibration, and pending-solve protection.
+- Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order preview/analysis packets, calibration, and pending-solve protection.
+- Independent preview/detection queues, bounded delivery until WebKit finishes decoding, stop/restart isolation, and preview throughput with deliberately slow analysis.
 
 See [verification notes](docs/VERIFICATION.md) for the native UI checks and remaining hardware testing.
 
@@ -113,6 +114,7 @@ See [verification notes](docs/VERIFICATION.md) for the native UI checks and rema
 
 ```text
 Sources/CubeClub/App.swift                 AppKit window, camera, speech, persistence, solver bridge
+Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, bounded WebKit delivery
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
   app.js                                  Lessons, practice, scanning and interaction state

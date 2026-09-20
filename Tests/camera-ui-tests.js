@@ -9,7 +9,9 @@
   function frame(load=true,token='test'){
     clock+=210;
     const count=imageLoads.length;
-    onCameraFrame({token,sequence:++sequence,image:'data:image/jpeg;base64,fixture',vision:reading()});
+    const packet={token,sequence:++sequence,capturedAt:clock};
+    onCameraFrame({...packet,image:'data:image/jpeg;base64,fixture'});
+    if(load)onCameraAnalysis({...packet,vision:reading()});
     const image=imageLoads.length>count?imageLoads.at(-1):null;
     if(load&&image)image.onload();
     return image;
@@ -46,6 +48,36 @@
   scan=makeScan();sequence=0;scan.solving=true;for(let i=0;i<6;i++)frame();captureFace(false);
   assert(scan.faces.F.includes('?'),'A pending solve cannot receive new camera edits');
   assert($('[data-action="captureFace"]').disabled,'Live feedback cannot re-enable capture during solving');
+  scan=makeScan();sequence=0;lastFrameTime=0;cameraState();
+  for(let i=0;i<40;i++){
+    clock+=34;onCameraFrame({token:'test',sequence:++sequence,capturedAt:clock,image:'fixture'});imageLoads.at(-1).onload();
+  }
+  assert(!scan.vision.result&&scan.faces.F.includes('?'),'Preview frames alone never count as detection evidence');
+  assert(lastFrameTime===clock,'Preview keeps advancing without any detection results');
+  for(let i=0;i<6;i++)frame();
+  assert(!scan.faces.F.includes('?'),'Independent detection still reaches consensus');
+  scan.faces.F[0]='?';scan.autoCapture=false;
+  clock+=1900;onCameraFrame({token:'test',sequence:++sequence,capturedAt:clock,image:'fixture'});imageLoads.at(-1).onload();
+  updateCameraFeedback();captureFace();
+  assert($('[data-action="captureFace"]').disabled&&scan.faces.F.includes('?'),'Live video cannot keep stale detection usable');
+  const before=scan.vision.sequence;
+  onCameraAnalysis({token:'test',sequence:++sequence,capturedAt:clock-2000,vision:reading()});
+  assert(scan.vision.sequence===before,'Slow old detection is discarded by capture time');
+  onCameraAnalysis({token:'old-session',sequence:++sequence,capturedAt:clock,vision:reading()});
+  assert(scan.vision.sequence===before,'Old session detection is ignored');
+  const captured=clock;clock+=100;scan.index=1;cameraState();
+  onCameraAnalysis({token:'test',sequence:++sequence,capturedAt:captured,vision:reading()});
+  assert(!scan.vision.result,'Detection from before a face switch is discarded');
+  scan=makeScan();sequence=0;cameraState();clock+=100;
+  onCameraAnalysis({token:'test',sequence:2,capturedAt:clock,vision:reading()});
+  const evidence=scan.vision.result;
+  onCameraAnalysis({token:'test',sequence:1,capturedAt:clock,vision:reading()});
+  assert(scan.vision.result===evidence,'Out-of-order detection cannot replace newer evidence');
+  onCameraFrame({token:'test',sequence:100,capturedAt:clock,image:'fixture'});imageLoads.at(-1).onload();
+  clock+=210;onCameraAnalysis({token:'test',sequence:3,capturedAt:clock,vision:reading()});
+  assert(scan.vision.sequence===3,'Faster preview sequence never suppresses independent analysis');
+  sequence=100;const failedImage=frame(false);failedImage.onerror();
+  assert(lastFrameTime<clock,'Broken image does not become the latest preview');
   Date.now=originalNow;
-  return `${checks} camera bridge checks passed: automatic capture, review locks, calibration, stream identity and stale frames.`;
+  return `${checks} camera bridge checks passed: automatic capture, review locks, calibration, independent preview/detection, review locks, stream identity and stale evidence.`;
 })();

@@ -56,7 +56,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         window.center()
         window.makeKeyAndOrderFront(nil)
         webView.loadFileURL(webRoot.appendingPathComponent("index.html"), allowingReadAccessTo: webRoot)
-        camera.onFrame = { [weak self] frame in self?.send("window.onCameraFrame", arguments: [frame]) }
+        camera.frames.onPreview = { [weak self] packet, done in self?.sendCamera("onCameraFrame", packet: packet, completion: done) ?? done() }
+        camera.frames.onAnalysis = { [weak self] packet, done in self?.sendCamera("onCameraAnalysis", packet: packet, completion: done) ?? done() }
         camera.onError = { [weak self] error in self?.send("window.onCameraError", arguments: [error]) }
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
@@ -125,21 +126,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         guard let data = try? JSONSerialization.data(withJSONObject: arguments), let json = String(data: data, encoding: .utf8) else { return }
         DispatchQueue.main.async { [weak self] in self?.webView?.evaluateJavaScript("\(function)?.(...\(json))", completionHandler: nil) }
     }
+    private func sendCamera(_ function: String, packet: [String: Any], completion: @escaping () -> Void) {
+        DispatchQueue.main.async { [weak self] in
+            guard let webView = self?.webView else { completion(); return }
+            // Await image decoding as well as JavaScript delivery before allowing
+            // the next preview through. At most one packet per lane is in flight.
+            webView.callAsyncJavaScript("await window.\(function)?.(packet)", arguments: ["packet": packet], in: nil, in: .page) { _ in completion() }
+        }
+    }
     func windowWillClose(_ notification: Notification) { camera.stop(); speech.stopSpeaking(at: .immediate) }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification: Notification) { camera.stop() }
 }
 
 final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-    var onFrame: (([String: Any]) -> Void)?
+    let frames = CameraFramePipeline()
     var onError: (([String: Any]) -> Void)?
     private let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "club.cube.camera")
-    private let context = CIContext()
-    private lazy var vision = CubeVision(context: context)
     private var streamToken = ""
-    private var frameSequence = 0
-    private var lastFrame = CFAbsoluteTimeGetCurrent()
     private var wantsCamera = false
     private var requestGeneration = 0
     private var observer: NSObjectProtocol?
@@ -150,7 +155,7 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             let generation = self.requestGeneration
             self.wantsCamera = true
             self.streamToken = token
-            self.frameSequence = 0
+            self.frames.start(token: token)
             switch AVCaptureDevice.authorizationStatus(for: .video) {
             case .authorized: self.configure(generation: generation, completion)
             case .notDetermined:
@@ -174,7 +179,7 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                     output.alwaysDiscardsLateVideoFrames = true
                     output.setSampleBufferDelegate(self, queue: self.queue)
                     self.session.beginConfiguration()
-                    self.session.sessionPreset = .high
+                    self.session.sessionPreset = self.session.canSetSessionPreset(.hd1280x720) ? .hd1280x720 : .high
                     guard self.session.canAddInput(input), self.session.canAddOutput(output) else {
                         self.session.commitConfiguration()
                         completion(["error": "This camera is unavailable. Try manual color entry."]); return
@@ -199,20 +204,10 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
 
-    func stop() { queue.async { self.requestGeneration += 1; self.wantsCamera = false; if self.session.isRunning { self.session.stopRunning() } } }
+    func stop() { frames.stop(); queue.async { self.frames.stop(); self.requestGeneration += 1; self.wantsCamera = false; if self.session.isRunning { self.session.stopRunning() } } }
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        let now = CFAbsoluteTimeGetCurrent()
-        guard wantsCamera, now - lastFrame > 0.20, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        lastFrame = now
-        let image = CIImage(cvPixelBuffer: buffer)
-        let scale = min(1, 960 / image.extent.width)
-        let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return }
-        let bitmap = NSBitmapImageRep(cgImage: cgImage)
-        guard let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.72]) else { return }
-        let analysis = vision.analyze(scaled)
-        frameSequence += 1
-        onFrame?(["token": streamToken, "sequence": frameSequence, "image": "data:image/jpeg;base64," + data.base64EncodedString(), "vision": analysis])
+        guard wantsCamera, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        frames.submit(CIImage(cvPixelBuffer: buffer))
     }
     deinit { if let observer = observer { NotificationCenter.default.removeObserver(observer) } }
 }

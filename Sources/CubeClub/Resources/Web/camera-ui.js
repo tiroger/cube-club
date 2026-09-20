@@ -5,7 +5,7 @@ function cameraState(){
   if(!scan.cameraCaptured)scan.cameraCaptured=new Set();
   if(!scan.vision)scan.vision={tracker:new CubeClubVision.Consensus(),face:null,result:null,captured:scan.cameraCaptured,sequence:-1};
   const v=scan.vision,face=scanOrder[scan.index];
-  if(v.face!==face){v.face=face;v.tracker.reset();v.result=null;}
+  if(v.face!==face){v.face=face;v.tracker.reset();v.result=null;v.since=Date.now();}
   return v;
 }
 function cameraPanel(){
@@ -31,38 +31,56 @@ function visionCopy(result){
 function updateCameraFeedback(){
   const v=cameraState();if(!v||!$('#vision-title'))return;
   const fresh=scan.camera&&Date.now()-lastFrameTime<1800;
-  let [title,message]=!scan.camera?['Ready when you are','Your camera images stay on this Mac.']:!fresh?['Waiting for a fresh picture','Reconnect the camera if the picture stays paused.']:visionCopy(v.result);
+  const evidenceFresh=fresh&&Date.now()-v.resultTime<1800;
+  let [title,message]=!scan.camera?['Ready when you are','Your camera images stay on this Mac.']:!fresh?['Waiting for a fresh picture','Reconnect the camera if the picture stays paused.']:visionCopy(evidenceFresh?v.result:null);
   if(fresh&&v.captured.has(v.face)&&!scan.calibrating){title='Take a look together.';message='Your color board is paused for review. Check all nine squares on the right, then confirm.';}
-  if(fresh&&scan.calibrating){title=v.result?.geometryReady?'Center ready to learn':'Show the center and hold still';message=`Make sure this is the ${COLOR_NAMES[v.face]} center, then choose “Teach ${COLOR_NAMES[v.face]} from the center.”`;}
+  if(fresh&&scan.calibrating){title=evidenceFresh&&v.result?.geometryReady?'Center ready to learn':'Show the center and hold still';message=`Make sure this is the ${COLOR_NAMES[v.face]} center, then choose “Teach ${COLOR_NAMES[v.face]} from the center.”`;}
   if($('#vision-title').textContent!==title)$('#vision-title').textContent=title;
   if($('#vision-message').textContent!==message)$('#vision-message').textContent=message;
-  $('#vision-feedback').classList.toggle('ready',!!(fresh&&v.result?.ready));
-  $('#vision-progress').style.width=`${fresh?(v.result?.progress||0)*100:0}%`;
+  $('#vision-feedback').classList.toggle('ready',!!(evidenceFresh&&v.result?.ready));
+  $('#vision-progress').style.width=`${evidenceFresh?(v.result?.progress||0)*100:0}%`;
   const capture=$('[data-action="captureFace"]'),teach=$('[data-action="teachCenter"]');
-  if(capture)capture.disabled=!!scan.solving||!fresh||!v.result?.ready||!!scan.calibrating;
-  if(teach)teach.disabled=!!scan.solving||!fresh||!v.result?.geometryReady;
+  if(capture)capture.disabled=!!scan.solving||!evidenceFresh||!v.result?.ready||!!scan.calibrating;
+  if(teach)teach.disabled=!!scan.solving||!evidenceFresh||!v.result?.geometryReady;
 }
 function refreshCameraPanel(){
   cameraState();
   if(scan.camera&&lastFrame)drawCamera(lastFrame);
   updateCameraFeedback();
 }
+function freshCameraPacket(packet){
+  return scan?.camera&&packet?.token===scan.cameraToken&&Number.isFinite(packet.sequence)&&
+    Number.isFinite(packet.capturedAt)&&Date.now()-packet.capturedAt>=0&&Date.now()-packet.capturedAt<1800;
+}
 window.onCameraFrame=packet=>{
   const owner=scan;
-  if(!owner?.camera||packet?.token!==owner.cameraToken||typeof packet.image!=='string')return;
-  const v=cameraState();if(!Number.isFinite(packet.sequence)||packet.sequence<=v.sequence)return;
+  if(!freshCameraPacket(packet)||typeof packet.image!=='string'||packet.sequence<=(owner.previewSequence??-1))return;
+  owner.previewSequence=packet.sequence;
+  // Resolve only after decoding/drawing, including discarded or broken images.
+  // Native code waits for this promise instead of queuing more JPEGs in WebKit.
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        if(scan!==owner||!freshCameraPacket(packet)||packet.sequence!==owner.previewSequence)return;
+        lastFrame=img;lastFrameTime=packet.capturedAt;
+        drawCamera(img);
+      }finally{resolve();}
+    };
+    img.onerror=()=>resolve();
+    img.src=packet.image;
+  });
+};
+window.onCameraAnalysis=packet=>{
+  if(!freshCameraPacket(packet))return;
+  const owner=scan,v=cameraState();
+  if(packet.sequence<=v.sequence||packet.capturedAt<v.since)return;
   v.sequence=packet.sequence;
-  const received=Date.now(),img=new Image();
-  img.onload=()=>{
-    if(scan!==owner||!owner.camera||packet.token!==owner.cameraToken||packet.sequence!==v.sequence)return;
-    lastFrame=img;lastFrameTime=received;
-    const state=cameraState();
-    state.result=state.tracker.update(packet.vision,{time:received,sequence:packet.sequence,expected:state.face,profile:cameraPalette});
-    state.resultTime=received;
-    drawCamera(img);updateCameraFeedback();
-    if(state.result.ready&&!owner.solving&&owner.autoCapture!==false&&!owner.calibrating&&!state.captured.has(state.face)&&!owner.confirmed.has(state.face))captureFace(true);
-  };
-  img.src=packet.image;
+  v.result=v.tracker.update(packet.vision,{time:packet.capturedAt,sequence:packet.sequence,expected:v.face,profile:cameraPalette});
+  v.resultTime=packet.capturedAt;
+  if(lastFrame)drawCamera(lastFrame);
+  updateCameraFeedback();
+  if(v.result.ready&&!owner.solving&&owner.autoCapture!==false&&!owner.calibrating&&!v.captured.has(v.face)&&!owner.confirmed.has(v.face))captureFace(true);
 };
 window.onCameraError=error=>{
   if(scan&&error?.token===scan.cameraToken){stopCubeCamera();$('#scan-error').textContent=error.message;}
@@ -71,7 +89,7 @@ function drawCamera(img){
   const canvas=$('#camera-canvas');if(!canvas)return;
   const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,scale=Math.min(w/img.width,h/img.height),iw=img.width*scale,ih=img.height*scale,ox=(w-iw)/2,oy=(h-ih)/2;
   ctx.fillStyle='#263e35';ctx.fillRect(0,0,w,h);ctx.drawImage(img,ox,oy,iw,ih);
-  const result=cameraState()?.result,p=result?.corners;
+  const state=cameraState(),result=state?.result,p=Date.now()-state?.resultTime<450?result?.corners:null;
   if(p){
     const path=()=>{ctx.moveTo(ox+p[0][0]*iw,oy+p[0][1]*ih);p.slice(1).forEach(q=>ctx.lineTo(ox+q[0]*iw,oy+q[1]*ih));ctx.closePath();};
     ctx.beginPath();ctx.rect(0,0,w,h);path();ctx.fillStyle='rgba(17,40,31,.36)';ctx.fill('evenodd');
@@ -95,7 +113,7 @@ async function startCubeCamera(button){
   if(!scan)return;
   const owner=scan;button.disabled=true;button.textContent='Opening camera…';
   owner.cameraToken=`cube-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  owner.vision=null;lastFrame=null;lastFrameTime=0;
+  owner.vision=null;owner.previewSequence=-1;lastFrame=null;lastFrameTime=0;
   const token=owner.cameraToken,result=await bridge('cameraStart',{token});
   if(scan!==owner||owner.cameraToken!==token)return;
   if(result.error){renderScan();$('#scan-error').textContent=result.error;}
@@ -116,4 +134,4 @@ function teachCameraCenter(){
 document.addEventListener('change',e=>{if(e.target.matches('[data-camera-auto]')&&scan){scan.autoCapture=e.target.checked;updateCameraFeedback();}});
 document.addEventListener('toggle',e=>{if(e.target.id==='color-teaching'&&scan){const changed=scan.calibrating!==e.target.open;scan.calibrating=e.target.open;if(changed){const v=cameraState();v.tracker.reset();v.result=null;updateCameraFeedback();}}},true);
 // A paused/disconnected stream cannot leave an enabled capture button behind.
-setInterval(()=>{if(scan?.camera&&Date.now()-lastFrameTime>1800)updateCameraFeedback();},700);
+setInterval(()=>{if(scan?.camera){updateCameraFeedback();if(lastFrame)drawCamera(lastFrame);}},700);

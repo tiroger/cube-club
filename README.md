@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.4.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.5.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -36,33 +36,47 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 ## What’s here
 
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
+- **Cube Quest — four stages and 23 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
 - **First solve — nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
 - **Next steps — six more missions:** direct white-cross insertion, alignment and restoration; ready F2L pairs on the right and left; and an introductory pair-building case. Follow the actual corner/edge stickers through each turn, with per-move explanations and six-face diagrams.
 - **Pattern practice:** eight cross/F2L recognition cases, gentle hints, links to the matching animated lesson, and three-case reviews that prioritize mistakes before new and less-practiced cases.
 - **An actual cube model:** drag to orbit; turn any face; watch the layer rotate; undo; scramble; return to a fresh cube. The animation geometry is tested against the solver’s permutation model for all 18 moves.
-- **Learn, then recall:** step through a pattern, watch a slow replay, try the next move from memory, request a hint, and answer a short discovery question. Every algorithm includes its use case and an explanation.
+- **Learn, practice, explain, check:** guided completion records exploration; memory practice permits hints; a correct concept answer records understanding; a fresh independent move sequence earns mastery. Wrong turns, hints, reading the next instruction, or stepping backward require a fresh independent check. Old exploration and badges remain saved.
+- **Eight new workshops:** last-layer orientation versus permutation, Anti-Sune, efficient ready-pair insertion, T and Y PLL examples, inspection, comfortable finger practice, and a two-pair lookahead drill.
+- **Optional solve timer:** opens after a parent confirms an independent real-cube solve. Start/stop buttons and Space control timing; only a confirmed solved cube saves a time. Retains the last 50 local times with personal best, arithmetic mean of the last five, and a next-practice focus. No time threshold controls progression.
 - **Solve my cube:** six-face camera capture, suggested colors, manual painting and rotation, full physical-state validation, and a verified move-by-move solution.
 - **Cube vision:** a live outline follows detected 3×3 faces. Tilt is corrected before sampling, several frames must agree, and capture pauses for review. Optional six-center color teaching adapts the classifier to the current cube and room lighting.
 - **Check my move:** optional snapshot checks after a guided turn. Review one or more faces; the app distinguishes ambiguous views, partial matches, full six-face matches, and common single-turn mistakes. Conditional repair instructions help undo an identified mistake.
 - **Case detective:** seven visual challenges using real cube states, highlighted stickers, hints, accessible color descriptions, and explanations for yellow shapes, edge slots, and a corner’s home.
 - **Together time:** parent-and-child rounds with alternating caller/turner roles, a reveal/predict/turn/discuss flow, gentle wrong-move feedback, and shared discoveries.
-- **Grown-up corner:** read-aloud instructions, slower motion, face labels, and learning-progress reset. System reduced-motion preferences are respected.
-- **Discovery badges:** effort and learning count. There are no racing timers, leaderboards, accounts, advertising, or streak penalties.
+- **Grown-up corner:** read-aloud instructions, slower motion, face labels, parent-confirmed milestones, deliberate starting-stage overrides, and learning-progress reset. Overrides open practice without awarding mastery or graduation; the controls are not password protection. System reduced-motion preferences are respected.
+- **Discovery badges:** effort and learning count. There are no leaderboards, accounts, advertising, or streak penalties. Timing is optional.
 
 ## Try it in two minutes
 
 1. Open **Start my adventure** and use **Next move**. Watch four right turns restore the cube.
-2. Open **The right-hand move**. Try **Watch the full pattern**, then **Try from memory**.
+2. Answer the question, choose **Practice from memory**, then complete **Check myself** to master the first lesson and unlock the next. A parent can adjust the starting stage in **Grown-up corner**.
 3. Open **Practice playground**. Make a turn and undo it. Drag the cube to see its hidden faces.
 4. Open **Solve my cube → Try a sample cube → Show me the steps** to exercise the complete solver without a camera.
 
-## Grow beyond the first solve
+## Follow Cube Quest
 
-Open **Learning path → Next steps**. The first three lessons teach direct white-cross ideas; the next three introduce intuitive F2L (first two layers). Keep yellow on top and green in front. Follow the outlined pieces on the 3D cube, or expand **Find the outlined pieces on all six sides**. **Show me how**, **Try from memory**, read-aloud, replay, and backward steps work here too.
+Open **Cube Quest** in the sidebar. All four destinations are visible. A locked destination previews its lessons and explains which earlier graduation is needed. Within a stage, master the previous lesson to open the next one. Each lesson has four saved steps:
 
-Choose **Pattern practice** below the six lessons (also available from Case detective). Pick any case, or start a three-case review. A case that needed another guess comes back in a future review; a correct first try clears that reminder. The **Watch this plan** button opens the lesson with the same prepared cube, except the cross-first case explicitly links to a separate cross example. There are no speed requirements or locked levels. Switching back to **First solve** preserves all progress and its original completion badge.
+1. **Learn:** finish the guided pattern or autoplay.
+2. **Practice:** perform the pattern from memory. Hints and retries count as practice.
+3. **Explain:** answer the lesson’s discovery question. You can try again.
+4. **Independent check:** start fresh and choose all moves without mistakes, hints, next-instruction read-aloud, or backward steps. Explanations that reveal algorithms are hidden during this check. Camera use and physical turning speed are not required.
 
-These are introductory examples, not a complete catalogue of cross or F2L cases. Read the orientation and starting-sticker instructions before trying a sequence on a real cube. The scanned-cube solver still returns a verified general solution; it does not yet produce a method-specific beginner or CFOP teaching solve. Camera case recognition and later two-look/full last-layer curricula are future additions.
+A graduation needs every lesson in that stage mastered, three independently answered stage questions, and a grown-up’s explicit confirmation of the physical-cube milestone. A wrong stage answer explains the idea and offers a fresh attempt. Earned graduations remain open. The reset control explicitly clears all progress, overrides, and saved times; there is no automatic loss of progress.
+
+Existing `completed`, quiz, recognition, playground and guided-solve records survive the update. An old watched lesson remains **explored**, not retrospectively mastered. In **Grown-up corner**, a parent may deliberately **Open through Intermediate / Advanced / Speed Solver** to choose an appropriate starting point. This opens all practice lessons through that stage without awarding badges for mastery or graduation. These controls use explicit acknowledgements, not a PIN or parental authentication system.
+
+**Piece Partners** includes the six direct-cross/F2L lessons and two last-layer foundations. Expand the six-face illustrations and follow outlined pieces. Cross/F2L pattern cases and reviews open alongside their matching lessons; linked demonstrations and Together Time obey the same lesson gates.
+
+**Clever Solutions** adds efficient pair insertion and T/Y PLL workshops. **Smooth Moves** introduces inspection, comfortable turning and lookahead, including a verified two-pair example. The real-cube milestone evaluates a thoughtful practice session, never a required time. The optional **My solve timer** can open earlier, as soon as a grown-up confirms the first independent solve. Timing is self-confirmed; the camera does not judge it. Leaving a running timer stops it for review without saving an unconfirmed result.
+
+These are prepared teaching examples, not an exhaustive beginner, F2L, two-look OLL/PLL, or full PLL/OLL case catalogue. The advanced stage begins the larger PLL toolkit with two cases; additional cases can grow within the progression. Read orientation and starting-sticker instructions before applying a sequence to a physical cube. The scanned-cube solver still returns a verified general solution, rather than a method-specific beginner or CFOP teaching solve. Graduations rely on the parent’s observed physical skills as well as in-app checks.
 
 ## Scan a real cube
 
@@ -116,6 +130,8 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Native detection of generated flat, tilted, off-center, and solved-color faces; perspective-corrected sampling; independent preview row-order checks; and rejection of blank, tiny, clipped, and heavily occluded faces.
 - Color calibration, exposure variation, glare, temporal agreement, movement, interruptions, and wrong centers.
 - Next-step lesson preconditions, matching-pair geometry, highlighted-piece tracking after every move, restoration of the cross and finished slots, recognition-case setups, review priority, and saved-progress migration.
+- Cube Quest: legacy migration, stage and lesson prerequisites, assisted versus independent attempts, graduation reachability, parent grants, saved times, last-layer preconditions and two-pair drill geometry.
+- An isolated native WebKit test runs all 23 lessons and four graduations through the actual interface, including mistakes, retries, bypass prevention, physical-milestone confirmation, persistence, timer review/discard, and minimum-window layout.
 - Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order preview/analysis packets, calibration, and pending-solve protection.
 - Independent preview/detection queues, bounded delivery until WebKit finishes decoding, stop/restart isolation, and preview throughput with deliberately slow analysis.
 
@@ -131,7 +147,10 @@ Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interf
   app.js                                  Lessons, practice, scanning and interaction state
   core.js                                 Beginner curriculum, scan validation, colors and solver guard
   next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
-  next-ui.js                              Learning stages, diagrams and pattern practice
+  next-ui.js                              Diagrams and cross/F2L pattern practice
+  quest-lessons.js                         Additional last-layer and speed workshops
+  quest-core.js                            Mastery, progression, graduation and timing state
+  quest-ui.js                              Adventure map, parent checkpoints and solve timer
   coach-core.js                           Observation matching, challenge cases, shared-round state
   coach-ui.js                             Move checks, Case Detective, and Together Time
   vision-core.js                          Color calibration and temporal camera evidence
@@ -151,6 +170,7 @@ For layout work only, serve the `Web` folder with a local server. Browser previe
 
 - Original illustration, visual design, curriculum wording, and app code created for this project.
 - [CubeSkills F2L](https://www.cubeskills.com/tutorials/f2l) and [Optimising the Beginner’s Method](https://www.cubeskills.com/tutorials/optimising-the-beginners-method) informed the progression into direct cross planning and corner-edge pairs. The app’s explanations, diagrams, and practice cases are original; every taught setup is checked against the cube model.
+- [CubeSkills four-look last layer](https://www.cubeskills.com/tutorials/4-look-last-layer), [PLL algorithms](https://www.cubeskills.com/uploads/pdf/tutorials/pll-algorithms.pdf), and [lookahead progression](https://cubeskills.com/blog/lookahead-progression-framework) informed the additional topics. Explanations and generated cube diagrams are original; algorithms are checked against the local cubie model.
 - [Official Rubik’s solution guides](https://www.rubiks.com/solution-guides) informed the beginner stage structure. No branded images or tutorial text were copied.
 - [cube.js by Petri Lehtinen and Ludovic Fernandez](https://github.com/ldez/cubejs/tree/v1.3.2), pinned to **v1.3.2**, provides the cubie model and two-phase solver. Its [MIT license](Sources/CubeClub/Resources/Web/vendor/LICENSE.cubejs) is included in source and bundled with the app.
 - Independent project; not affiliated with or endorsed by Rubik’s.

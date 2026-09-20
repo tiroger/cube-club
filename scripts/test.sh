@@ -10,3 +10,6 @@ swiftc -O Sources/CubeClub/CubeVision.swift Tests/vision-tests.swift -o "$VISION
 
 swiftc -O Sources/CubeClub/CubeVision.swift Sources/CubeClub/CameraFramePipeline.swift Tests/camera-pipeline-tests.swift -o "$VISION_TEST_BIN/camera-pipeline-tests"
 "$VISION_TEST_BIN/camera-pipeline-tests"
+
+swiftc -parse-as-library Tests/quest-ui-tests.swift -o "$VISION_TEST_BIN/quest-ui-tests"
+"$VISION_TEST_BIN/quest-ui-tests"

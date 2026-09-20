@@ -38,7 +38,7 @@ function teamPage(){
  return `<div class="lesson-top"><button class="back-link" data-nav="team">${icon('arrow')}Choose another pattern</button><span class="eyebrow">TOGETHER TIME</span></div><div class="lesson-layout">${stage()}<div class="lesson-copy"><div class="eyebrow">${icon('team')}OUR SHARED PATTERN</div><h1>${session.lesson.title}</h1><div id="team-controls"></div></div></div>`;
 }
 function startTeam(id){
- const lesson=LESSONS.find(l=>l.id===id);if(!lesson)return;
+ const lesson=LESSONS.find(l=>l.id===id);if(!lesson)return;if(!Quest.canOpen(progress,id)){showLockedLesson(id);return;}
  cancelPlayback();busy=false;view?.destroy();route='team';
  session={type:'team',lesson,round:Coach.makeTeamRound(id),cube:new Cube().move(Cube.inverse(lesson.algorithm)),credited:false,feedback:''};render();
 }

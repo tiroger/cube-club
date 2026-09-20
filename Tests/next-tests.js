@@ -3,7 +3,7 @@
  const N=CubeClubNext,{LESSONS,moves,normalizeProgress,validate}=CubeClubCore;
  let checks=0;const assert=(value,message)=>{if(!value)throw Error(message);checks++;};
  const initial=id=>new Cube().move(Cube.inverse(N.LESSONS.find(l=>l.id===id).algorithm));
- assert(LESSONS.length===15&&N.LESSONS.length===6,'Nine beginner lessons and six next-step lessons');
+ assert(LESSONS.filter(l=>!l.questStage).length===15&&N.LESSONS.length===6,'Nine beginner lessons and six next-step lessons');
  assert(new Set(LESSONS.map(l=>l.id)).size===LESSONS.length,'Stable unique lesson IDs');
  // Check the advertised starting locations and sticker orientation independently
  // of the UI's matching/diagram helpers.

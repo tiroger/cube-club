@@ -18,7 +18,6 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     var web: WKWebView!
     var shell: ClubShell!
     var saved = "{}"
-    var checks = 0
     var started = false
     let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -35,7 +34,6 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         }
         // Avoid reading or writing app window-layout preferences in the test runner.
         window.setFrameAutosaveName("")
-        shell.split.splitView.autosaveName = nil
         window.setContentSize(NSSize(width: 1024,height: 720))
         window.orderFront(nil)
         let directory = root.appendingPathComponent("Sources/CubeClub/Resources/Web")
@@ -43,7 +41,6 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         DispatchQueue.main.asyncAfter(deadline: .now()+55) { self.fail("Native shell timed out") }
     }
     func fail(_ message: String) -> Never { fputs("Native shell failure: \(message)\n",stderr); exit(1) }
-    func check(_ value: Bool, _ message: String) { checks += 1; if !value { fail(message) } }
     func reply(_ id: Int, _ result: [String: Any]) {
         let json = String(data: try! JSONSerialization.data(withJSONObject: [id,result]), encoding: .utf8)!
         web.evaluateJavaScript("window.nativeResult(...\(json))")
@@ -61,19 +58,8 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         case "chromeState": shell.update(body); reply(id,["ok": true])
         case "shellTestCommand": shell.perform(body["command"] as! String); reply(id,["ok": true])
         case "shellSnapshot":
-            let table = shell.sidebar.view.subviews.compactMap { $0 as? NSScrollView }.first!.documentView as! NSTableView
             let item = { (name: String) in self.window.toolbar!.items.first { $0.itemIdentifier.rawValue == name }! }
-            reply(id,["title": window.title, "back": item("back").isEnabled, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "selected": table.selectedRow, "rowHeight": table.delegate!.tableView!(table,heightOfRow: 1), "contentWidth": web.bounds.width])
-        case "shellSelect":
-            let table = shell.sidebar.view.subviews.compactMap { $0 as? NSScrollView }.first!.documentView as! NSTableView
-            table.selectRowIndexes(IndexSet(integer: body["row"] as! Int), byExtendingSelection: false)
-            reply(id,["ok": true])
-        case "shellCollapse":
-            let collapsed = shell.split.splitViewItems[0].isCollapsed
-            shell.split.splitViewItems[0].isCollapsed = !collapsed
-            window.contentView?.layoutSubtreeIfNeeded()
-            check(shell.split.splitViewItems[0].isCollapsed != collapsed,"Sidebar toggles")
-            reply(id,["ok": true])
+            reply(id,["title": window.title, "back": item("back").isEnabled, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "sidebar": item("sidebar").label, "contentWidth": web.bounds.width])
         default: reply(id,["ok": true])
         }
     }
@@ -84,7 +70,7 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
             web.callAsyncJavaScript(script,arguments: [:],in: nil,in: .page) { result in
                 switch result {
                 case .failure(let error): self.fail(error.localizedDescription)
-                case .success(let value): print("\(value); \(self.checks) native sidebar collapse checks passed."); exit(0)
+                case .success(let value): print(value); exit(0)
                 }
             }
         } catch { fail(error.localizedDescription) }

@@ -128,3 +128,13 @@ The isolated **Cube Club Native QA** app (`club.cube.mac.nativeqa`) was used for
 The native shell uses AppKit window controls, a unified compact toolbar, source-list navigation, SF Symbols, and a translucent sidebar. The local teaching canvas and settings content remain in WebKit. The Mac build hides the former web header, profile circle, sidebar, and footer; browser previews retain their navigation. This is a native window/navigation update, not a rewrite of every lesson control in AppKit.
 
 Built and verified `Cube-Club-0.7.0-arm64.dmg`: exact tested resources, read-only image mounting, both local signatures, Applications link, original artwork, and corrected Finder icon positions. SHA-256: `ff977cd0bdb1d08d7e73587111110d274903788603a8df7e6f68b02d643c2f3f`. This remains a local development package without Developer ID notarization.
+
+## Version 0.7.1 — restore the cohesive clubhouse sidebar
+
+Restored the original sidebar, branding, rounded typography, green navigation highlights, learner profile, footer, and teaching-page spacing. Removed the AppKit source-list sidebar and split-view wrapper. The compact Mac toolbar, current-lesson title, menus, full screen, and keyboard shortcuts remain; the extra web-style top header stays hidden. The native sidebar control now hides/shows the original sidebar and gives the teaching page the freed space. Each launch begins with the sidebar visible.
+
+**3,817 automated checks passed:** all 3,761 model, camera, progression, and settings checks plus 56 revised Mac toolbar integration checks. Coverage includes original-sidebar visibility and theme colors, toolbar hide/show labels and reclaimed content width, navigation in both directions, lesson titles, modal protections, progression gates, timer behavior, and large-text layouts at the minimum window size. Synthetic preview remained at 30.0 fps with 6 ms p95 capture-to-draw latency.
+
+Visual QA used only the isolated `club.cube.mac.nativeqa` app. Inspected the restored light and dark clubhouse with Larger text, verified ⌃⌘S hides and restores the sidebar, opened Cube Quest using the original sidebar, and checked the matching window title. The test app was quit afterward; production learner progress and preferences were not opened or changed.
+
+Built and verified `Cube-Club-0.7.1-arm64.dmg`: tested resources match the embedded app, both local signatures pass, and the read-only image, Applications link, original background and corrected Finder positions are intact. SHA-256: `212859005261ad439faeefef13e4d6510c07d3f6392d9e692b1b7e3099dd536c`. Local development signing and the existing notarization limitation are unchanged.

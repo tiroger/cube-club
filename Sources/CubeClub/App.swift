@@ -19,6 +19,7 @@ struct CubeClubApp {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate {
     private var window: NSWindow!
     private var webView: WKWebView!
+    private var shell: ClubShell!
     private let camera = CubeCamera()
     private let speech = AVSpeechSynthesizer()
     private let solverQueue = DispatchQueue(label: "club.cube.solver", qos: .userInitiated)
@@ -52,16 +53,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         }
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "native")
+        config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNativeShell = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
         webView.setValue(false, forKey: "drawsBackground")
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1320, height: 860), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1320, height: 860), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = "Cube Club"
         window.minSize = NSSize(width: 1024, height: 720)
         window.backgroundColor = .windowBackgroundColor
-        window.contentView = webView
+        shell = ClubShell(window: window, webView: webView) { [weak self] action in
+            self?.send("window.nativeCommand", arguments: [action])
+        }
+        settingsItem.target = shell
+        settingsItem.action = #selector(ClubShell.openSettings)
+        shell.addMenus(to: menu)
         window.delegate = self
-        window.center()
         window.makeKeyAndOrderFront(nil)
         webView.loadFileURL(webRoot.appendingPathComponent("index.html"), allowingReadAccessTo: webRoot)
         camera.frames.onPreview = { [weak self] packet, done in self?.sendCamera("onCameraFrame", packet: packet, completion: done) ?? done() }
@@ -85,6 +91,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
               let body = message.body as? [String: Any], let action = body["action"] as? String else { return }
         let id = body["id"] as? Int ?? 0
         switch action {
+        case "chromeState":
+            shell.update(body)
+            reply(id, ["ok": true])
         case "solve":
             guard let facelets = body["facelets"] as? String, facelets.count == 54 else {
                 reply(id, ["error": "Please scan all six faces first."]); return
@@ -138,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         }
     }
 
-    @objc private func openSettings() { send("window.openSettings", arguments: []) }
+    @objc private func openSettings() { shell?.openSettings() }
     private func applyAppearance(_ mode: String) {
         NSApplication.shared.appearance = mode == "dark" ? NSAppearance(named: .darkAqua) : mode == "light" ? NSAppearance(named: .aqua) : nil
     }

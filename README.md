@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.6.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.7.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -35,6 +35,7 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 
 ## What’s here
 
+- **A native Mac window:** a compact unified title bar, translucent AppKit sidebar, system icons and navigation controls. Hide the sidebar for more room, use keyboard shortcuts, and keep the illustrated teaching workspace.
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
 - **Cube Quest — four stages and 23 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
 - **First solve — nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
@@ -61,7 +62,7 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 
 ## Make it yours
 
-Open **Settings & grown-up corner** in the sidebar, or **Cube Club → Settings…** (⌘,).
+Open **Settings…** at the bottom of the Mac sidebar, the toolbar’s gear button, or **Cube Club → Settings…** (⌘,). The browser preview keeps its **Settings & grown-up corner** button.
 
 - **Look & feel:** choose Light, Dark, or Follow my Mac. The native window follows the same appearance; the cube’s sticker colors stay unchanged. Larger text increases teaching copy and controls. Reduce motion shows turn results without spinning, and also respects the Mac’s Reduce Motion setting.
 - **Learning & camera:** choose read-aloud instructions, slower animated turns, center face letters, and automatic capture when a face is steady. Changing auto-capture inside a scan also saves the choice for the next scan or move check. The camera still starts only when requested and every capture needs review.
@@ -70,6 +71,18 @@ Open **Settings & grown-up corner** in the sidebar, or **Cube Club → Settings�
 To start over, open **Progress → Reset all progress…**. Review the explanation, check the acknowledgement, and confirm. This clears all learning milestones, discoveries, practice records, solve counts, parent overrides, and times; it returns the learning path to the first beginner lesson and locks the optional timer. Appearance, accessibility, voice, pacing, labels, and camera preferences remain saved. Cancel leaves everything unchanged. Reset cannot be undone; there is no automatic reset during an update.
 
 Settings and progress stay on this Mac. This release uses one learner profile; it does not sync progress or provide backup export/import.
+
+## Mac navigation
+
+The packaged app uses a real AppKit toolbar and source-list sidebar. The window title follows the current lesson. The camera button opens cube review; it does not turn on the camera automatically. The speaker button controls read-aloud, and the gear opens settings. The extra website-style header, profile circle, sidebar, and footer are hidden in the Mac app; the teaching content stays in the local WebKit canvas.
+
+- **⌃⌘S:** show or hide the sidebar.
+- **⌘[**: return to the learning path from a lesson, or to the clubhouse from a main section.
+- **⌘1–8:** open the destinations listed in the **Go** menu.
+- **⌘,:** open Settings.
+- **⌃⌘F:** enter or exit full screen.
+
+The sidebar adapts to Larger text, and window size/position are remembered. Native navigation respects open reviews and confirmation dialogs, waits for an active cube turn, and uses the same learning gates and timer behavior as the teaching screens. Light/Dark/Follow my Mac apply to both the native controls and lesson content.
 
 ## Follow Cube Quest
 
@@ -136,6 +149,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
+- Native toolbar/sidebar synchronization, lesson titles and back navigation, collapse/expansion, native larger text, scan/reset modal guards, rejected navigation during turns, progression gates, and timer behavior when leaving through native navigation.
 - Twenty deterministic 25-move scrambles, each solved and verified end-to-end.
 - Every requested move against no turn and all 18 possible single turns, with exact-state repair verification.
 - Partial/ambiguous observations, unknown stickers, wrong centers, multi-turn divergence, and adaptive face selection.

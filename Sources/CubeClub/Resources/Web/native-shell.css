@@ -1,0 +1,30 @@
+/* AppKit supplies navigation and window controls in the packaged Mac app. */
+:root[data-shell=mac]{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+:root[data-shell=mac] :is(.sidebar,.topbar,.app-footer,.lesson-top>.back-link){display:none}
+:root[data-shell=mac] .main-shell{margin-left:0}
+:root[data-shell=mac] main{max-width:1320px;margin:0 auto;padding:30px 34px 40px}
+:root[data-shell=mac] :is(h1,h2,h3){font-family:var(--round)}
+:root[data-shell=mac] .lesson-top{justify-content:flex-end;margin-bottom:16px}
+:root[data-shell=mac] button{cursor:default}
+:root[data-shell=mac] #overlay{padding:16px}
+:root[data-shell=mac] .modal{max-height:calc(100vh - 32px);border-radius:16px}
+@media(max-width:850px){
+ :root[data-shell=mac] main{padding:24px}
+ :root[data-shell=mac] .welcome-row{align-items:flex-start}
+ :root[data-shell=mac] .gentle-pill{display:none}
+ :root[data-shell=mac] .home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ :root[data-shell=mac] .hero-copy{width:68%}
+ :root[data-shell=mac] .hero-illustration{opacity:.75}
+ :root[data-shell=mac] .bottom-grid{grid-template-columns:1fr}
+ :root[data-shell=mac] .scan-columns{gap:18px}
+ :root[data-shell=mac] .scan-footer{flex-wrap:wrap;gap:12px}
+ :root[data-shell=mac] .scan-footer .button{white-space:normal}
+ :root[data-shell=mac] .settings-tabs button{padding:10px 7px}
+}
+@media(max-width:760px){
+ :root[data-shell=mac] .lesson-layout{grid-template-columns:1fr}
+ :root[data-shell=mac] .cube-stage{max-width:480px;margin:0 auto}
+ :root[data-shell=mac] .scan-columns{grid-template-columns:1fr}
+ :root[data-shell=mac] .appearance-options{gap:8px}
+ :root[data-shell=mac] .appearance-option{padding:9px}
+}

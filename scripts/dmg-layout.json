@@ -1,0 +1,11 @@
+{
+  "width": 800,
+  "height": 533,
+  "window_chrome_height": 60,
+  "icon_size": 112,
+  "text_size": 14,
+  "icons": {
+    "Cube Club.app": [250, 280],
+    "Applications": [550, 280]
+  }
+}

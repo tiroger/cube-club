@@ -56,3 +56,11 @@ The isolated **Cube Club Vision QA** bundle (`club.cube.mac.visionqa`) used a ge
 The native image tests need macOS graphics services. In a restricted command sandbox, Core Image returned empty pixel buffers; tests passed with graphics access. This is an environment constraint, not a camera fallback. The production app reports unavailable vision and keeps manual entry available if detection fails.
 
 Remaining hardware validation: use the learner's physical cube, test common sticker and stickerless finishes with the actual webcam, vary room light/glare/distance/tilt/background, and record detection and color error rates. Synthetic checks establish geometry and integration behavior; they do not establish real-world accuracy. This version locates visible faces and checks reviewed snapshots; it does not continuously infer physical turns or unseen stickers.
+
+## Version 0.3 installer packaging
+
+Ran the complete `scripts/build-dmg.sh` path: rebuilt the release app, prepared the full-resolution Finder background, and created the compressed `Cube-Club-0.3.0-arm64.dmg`. The image and embedded app pass strict code-signature verification. Packaging checks verify the image checksum, a read-only mounted filesystem, exactly two visible items, the `/Applications` shortcut, file-by-file equality with the source app, the background/volume-icon hashes, and the stored Finder icon locations and size. A SHA-256 companion file is generated alongside the image. Packaging dependencies are pinned and kept outside the application.
+
+Opened the finished DMG through Finder and visually checked the actual installer window. Both native icons sit inside their landing areas, the arrow and instructions are legible, and the complete mascot and footer fit. The window allows space for Finder's title and path bars. App behavior was unchanged by this packaging work.
+
+Both signatures are for local development. The build Mac had no valid Developer ID signing identity; Apple notarization was not attempted. No security settings were changed. The DMG is a local development installer, not a notarized public-distribution release.

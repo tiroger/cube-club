@@ -18,16 +18,22 @@ The first screen offers one obvious invitation. The learning path gives freedom 
 
 An adult can ask “What do you think will move?” before a turn and “What stayed safe?” after it. Five enjoyable minutes are a useful session. The app does not penalize breaks.
 
+## Added in version 0.2
+
+**Check my move** compares reviewed face snapshots against the expected state, the previous state, and each possible single-turn alternative. It chooses an informative next face when views are ambiguous. It reserves full confirmation for all six faces, labels partial matches, and offers conditional repair instructions. Trying a repair clears old evidence. Unknown camera patches, incorrect centers, stale frames, and more complicated mismatches ask for another look rather than asserting a successful move.
+
+**Case detective** uses seven legal cube states to teach yellow-shape recognition, middle-edge placement, and a white corner’s home. The live cube highlights the relevant stickers. Flat face illustrations show the same colors and include text alternatives. Wrong answers are gentle and progress records discoveries only after a correct answer.
+
+**Together time** gives a child and grown-up alternating caller/turner roles. Reveal a move, predict together, turn the virtual cube, and discuss what changed. The discussion checkpoint switches roles. Wrong buttons preserve the cube. Completing a round earns a shared discovery, without a timer.
+
 ## Strong next additions
 
-1. **Check my move:** photograph the visible faces after a move, compare them with the expected state, and help recover from a turn in the wrong direction. Start with explicit captures before attempting continuous hand tracking. Never promise certainty when the distinguishing stickers are hidden.
-2. **Beginner-method solve planning:** generate white-cross, corner, middle-layer and last-layer subgoals from a scanned state. Reuse lesson patterns and explain why each one applies. Keep the current two-phase solver as a recovery path.
-3. **Case detective:** rotate a virtual cube and identify a white corner’s home, a yellow L versus line, or the direction for a middle-layer edge. Build recognition before recall speed.
-4. **Parent-and-child mode:** take turns being the “move caller” and the “cube detective.” Have the child teach the parent the pattern.
-5. **Color calibration:** sample actual center colors, support custom cube color arrangements, show confidence per sticker, and make the orientation coach more visual.
-6. **A full beginner story:** illustrated piece tracking, more first-layer cases, explicit final corner orientation, and a printable companion sheet.
-7. **Multiple local profiles:** separate progress for siblings and a nickname chosen with a parent, without introducing accounts.
+1. **Beginner-method solve planning:** generate cross, corner, middle-layer and last-layer subgoals from a scanned state. Reuse the teaching patterns and explain why each applies. Keep the current two-phase solver as a recovery path.
+2. **Color calibration:** sample actual center colors, support custom cube arrangements, and validate the classifier across common cube finishes and lighting.
+3. **A full beginner story:** illustrated piece tracking, more first-layer cases, explicit final corner orientation, and a printable companion sheet.
+4. **Multiple local profiles:** separate progress for siblings and a nickname chosen with a parent, without accounts.
+5. **Continuous move tracking:** only after snapshot checking has been tested well with real cubes. Hands and hidden faces create ambiguity; the app should ask for another view when it cannot tell.
 
-## Boundaries of this first version
+## Current boundaries
 
-The camera flow needs a physical-cube usability session. Suggested colors require confirmation. Lessons show prepared cases rather than diagnosing every beginner case. Scan solutions are efficient move sequences rather than pedagogical layer-by-layer plans. Move verification is manual. The app is a local development build and needs a distribution signing/notarization pass before sharing broadly.
+Snapshot checks need hands-on physical-cube testing. Suggested colors require review. Camera comparisons assume the prior guided state was correct and diagnose only no turn or one face turn; arbitrary extra moves require rescanning. Six reviewed faces confirm the entered state, not the reliability of the classifier itself. Lessons still use prepared cases. Scan solutions remain efficient two-phase move sequences rather than a beginner layer-by-layer plan. The app is locally signed and needs distribution signing/notarization before sharing broadly.

@@ -13,7 +13,7 @@ To build from source, install Xcode or Apple’s Swift command line tools, then 
 open "build/Cube Club.app"
 ```
 
-You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera: it contains the camera permission description and a stable app identity. No npm install, remote service, API key, or account is needed. Building on an Intel Mac produces an Intel build.
+You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera: it contains the camera permission description and a stable app identity. Version 0.2 adds camera move checks, Case Detective, and Together Time. No npm install, remote service, API key, or account is needed. Building on an Intel Mac produces an Intel build.
 
 ## What’s here
 
@@ -22,6 +22,9 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 - **An actual cube model:** drag to orbit; turn any face; watch the layer rotate; undo; scramble; return to a fresh cube. The animation geometry is tested against the solver’s permutation model for all 18 moves.
 - **Learn, then recall:** step through a pattern, watch a slow replay, try the next move from memory, request a hint, and answer a short discovery question. Every algorithm includes its use case and an explanation.
 - **Solve my cube:** six-face camera capture, suggested colors, manual painting and rotation, full physical-state validation, and a verified move-by-move solution.
+- **Check my move:** optional snapshot checks after a guided turn. Review one or more faces; the app distinguishes ambiguous views, partial matches, full six-face matches, and common single-turn mistakes. Conditional repair instructions help undo an identified mistake.
+- **Case detective:** seven visual challenges using real cube states, highlighted stickers, hints, accessible color descriptions, and explanations for yellow shapes, edge slots, and a corner’s home.
+- **Together time:** parent-and-child rounds with alternating caller/turner roles, a reveal/predict/turn/discuss flow, gentle wrong-move feedback, and shared discoveries.
 - **Grown-up corner:** read-aloud instructions, slower motion, face labels, and learning-progress reset. System reduced-motion preferences are respected.
 - **Discovery badges:** effort and learning count. There are no racing timers, leaderboards, accounts, advertising, or streak penalties.
 
@@ -45,7 +48,15 @@ Use a standard 3×3 color arrangement: **yellow on top, green in front, orange o
 
 Color recognition is a simple local color classifier, not a trained vision model. Glare, dim light, unusual sticker colors, and a tilted cube can confuse it. Corrections are part of the scan flow. Invalid color counts, duplicates, flipped edges, twisted corners, and impossible permutation parity are rejected before solving. A detected center mismatch is called out. No frame is saved to disk or sent anywhere.
 
-**The app does not continuously verify your physical moves.** If your real cube stops matching, undo the last turn or scan it again. The app stops the camera when the scan closes.
+**The app checks snapshots; it does not continuously track your hands.** After making the displayed move and tapping **Next move**, choose **Check my last move**. The checker stays tied to that completed step and pauses the guide.
+
+- Show the suggested face and choose **Read this face**, or enter the colors manually.
+- Correct every suggestion, then choose **Compare reviewed colors**. Dark, uneven, or borderline color patches stay unknown until corrected.
+- A view that fits several turns asks for another side. A partial match explicitly leaves hidden faces unchecked. Only six reviewed matching faces confirm the full state.
+- A likely missed or mistaken single turn offers conditional repair instructions. After trying them, choose **I tried the repair** to discard old observations and check fresh views.
+- If no single-turn explanation fits, review orientation/colors or start a fresh six-face scan. The checker never silently changes the solution or advances the step.
+
+Keep the cube’s sticker arrangement unchanged while capturing several faces; reorient the whole cube to show each side. These checks assume the previous guided state was correct. Color recognition can be mistaken, and manual review remains necessary. Camera images are never saved. The camera stops when its review closes, and move-check screens also have an explicit camera-off control.
 
 ## Teaching versus solving
 
@@ -66,6 +77,9 @@ Uses Apple’s JavaScriptCore through Swift, with no additional package installa
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
 - Twenty deterministic 25-move scrambles, each solved and verified end-to-end.
+- Every requested move against no turn and all 18 possible single turns, with exact-state repair verification.
+- Partial/ambiguous observations, unknown stickers, wrong centers, multi-turn divergence, and adaptive face selection.
+- Seven legal challenge cases, complete shared-round state transitions, uncertain camera patches, and migration of existing saved progress.
 
 See [verification notes](docs/VERIFICATION.md) for the native UI checks and remaining hardware testing.
 
@@ -76,6 +90,8 @@ Sources/CubeClub/App.swift                 AppKit window, camera, speech, persis
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
   app.js                                  Lessons, practice, scanning and interaction state
   core.js                                 Curriculum, scan validation, colors and solver guard
+  coach-core.js                           Observation matching, challenge cases, shared-round state
+  coach-ui.js                             Move checks, Case Detective, and Together Time
   cube-view.js                            3D projection and animated layer turns
   vendor/                                 Pinned cube.js 1.3.2 sources and MIT license
 scripts/                                  Build, icon generation, and test entry points

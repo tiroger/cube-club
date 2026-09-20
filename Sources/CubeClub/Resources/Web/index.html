@@ -24,6 +24,8 @@
 <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V3c6-5 10 5 16 0v11c-6 5-10-5-16 0"/></symbol>
 <symbol id="i-settings" viewBox="0 0 24 24"><path d="M3 6h18M3 18h18"/><circle cx="8" cy="6" r="3"/><circle cx="16" cy="18" r="3"/></symbol>
 <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21C-7 10 5-3 12 6c7-9 19 4 0 15Z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 7 7"/></symbol>
+<symbol id="i-team" viewBox="0 0 24 24"><circle cx="8" cy="7" r="3"/><circle cx="18" cy="9" r="2.5"/><path d="M1 21v-3c0-7 14-7 14 0v3m1-7c4-1 7 1 7 5v2"/></symbol>
 </defs></svg>
 <div class="app-shell">
 <aside class="sidebar">
@@ -34,6 +36,8 @@
     <button data-nav="learn"><svg><use href="#i-book"/></svg>Learning path<span class="nav-count">9</span></button>
     <button data-nav="play"><svg><use href="#i-cube"/></svg>Practice playground</button>
     <button data-action="scan"><svg><use href="#i-camera"/></svg>Solve my cube</button>
+    <button data-nav="detective"><svg><use href="#i-search"/></svg>Case detective</button>
+    <button data-nav="team"><svg><use href="#i-team"/></svg>Together time</button>
     <button data-nav="badges"><svg><use href="#i-star"/></svg>My discoveries</button>
   </nav>
   <div class="sidebar-bottom"><div class="mini-coach"><div class="mini-spark">✦</div><strong>A little practice.<br>A little cube magic.</strong><p>Every cuber started with<br>one small turn.</p></div><button class="settings-link" data-action="settings"><svg><use href="#i-settings"/></svg>Grown-up corner</button><div class="profile"><span class="avatar">C</span><div><strong>Curious cuber</strong><small>Learning at your own pace</small></div><span class="online-dot"></span></div></div>
@@ -41,5 +45,5 @@
 <div class="main-shell"><header class="topbar"><div id="breadcrumb">MY CLUBHOUSE</div><div class="top-actions"><span class="offline"><span></span>Made for curious minds</span><button class="icon-button" data-action="toggleVoice" id="voice-toggle" aria-label="Turn read-aloud on" title="Read-aloud"><svg><use href="#i-sound"/></svg></button><span class="avatar small">C</span></div></header><main id="content" tabindex="-1"></main><footer class="app-footer"><span><svg><use href="#i-heart"/></svg>Small steps count. You've got this.</span><span>CUBE CLUB <b>✦</b> LEARN BY DOING</span></footer></div>
 </div>
 <div id="overlay" hidden></div><div id="toast" role="status" aria-live="polite"></div>
-<script src="vendor/cube.js"></script><script src="core.js"></script><script src="cube-view.js"></script><script src="app.js"></script>
+<script src="vendor/cube.js"></script><script src="core.js"></script><script src="cube-view.js"></script><script src="coach-core.js"></script><script src="coach-ui.js"></script><script src="app.js"></script>
 </body></html>

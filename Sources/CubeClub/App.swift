@@ -138,24 +138,29 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let context = CIContext()
     private var lastFrame = CFAbsoluteTimeGetCurrent()
     private var wantsCamera = false
+    private var requestGeneration = 0
     private var observer: NSObjectProtocol?
 
     func start(completion: @escaping ([String: Any]) -> Void) {
-        queue.async { self.wantsCamera = true }
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized: configure(completion)
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                if granted { self?.configure(completion) }
-                else { completion(["error": "Camera access is off. You can still paint the colors by hand, or allow Cube Club in System Settings → Privacy & Security → Camera."]) }
+        queue.async { [self] in
+            self.requestGeneration += 1
+            let generation = self.requestGeneration
+            self.wantsCamera = true
+            switch AVCaptureDevice.authorizationStatus(for: .video) {
+            case .authorized: self.configure(generation: generation, completion)
+            case .notDetermined:
+                AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                    if granted { self?.configure(generation: generation, completion) }
+                    else { completion(["error": "Camera access is off. You can still paint colors by hand, or allow Cube Club in System Settings → Privacy & Security → Camera."]) }
+                }
+            default: completion(["error": "Camera access is off. Use manual colors, or allow Cube Club in System Settings → Privacy & Security → Camera."])
             }
-        default: completion(["error": "Camera access is off. Use manual colors, or allow Cube Club in System Settings → Privacy & Security → Camera."])
         }
     }
 
-    private func configure(_ completion: @escaping ([String: Any]) -> Void) {
+    private func configure(generation: Int, _ completion: @escaping ([String: Any]) -> Void) {
         queue.async { [self] in
-            guard self.wantsCamera else { completion(["error": "Camera canceled."]); return }
+            guard self.wantsCamera, generation == self.requestGeneration else { completion(["error": "Camera canceled."]); return }
             if self.session.inputs.isEmpty {
                 guard let device = AVCaptureDevice.default(for: .video) else { completion(["error": "No camera found. You can enter your cube’s colors by hand."]); return }
                 do {
@@ -186,7 +191,7 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
 
-    func stop() { queue.async { self.wantsCamera = false; if self.session.isRunning { self.session.stopRunning() } } }
+    func stop() { queue.async { self.requestGeneration += 1; self.wantsCamera = false; if self.session.isRunning { self.session.stopRunning() } } }
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let now = CFAbsoluteTimeGetCurrent()
         guard wantsCamera, now - lastFrame > 0.16, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }

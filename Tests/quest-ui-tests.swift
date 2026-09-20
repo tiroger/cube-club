@@ -35,7 +35,7 @@ final class QuestUIRunner: NSObject, NSApplicationDelegate, WKNavigationDelegate
     func fail(_ message: String) { fputs("Quest UI failure: \(message)\n",stderr); exit(1) }
     func webView(_ webView: WKWebView,didFinish navigation: WKNavigation!) {
         do {
-            let script = try String(contentsOf: root.appendingPathComponent("Tests/quest-ui-tests.js"),encoding: .utf8)
+            let script = try String(contentsOf: root.appendingPathComponent(CommandLine.arguments.dropFirst().first ?? "Tests/quest-ui-tests.js"),encoding: .utf8)
             web.callAsyncJavaScript(script,arguments: [:],in: nil,in: .page) { result in
                 switch result {
                 case .failure(let error): self.fail(error.localizedDescription)

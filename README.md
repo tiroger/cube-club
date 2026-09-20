@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.5.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.6.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -49,7 +49,7 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 - **Check my move:** optional snapshot checks after a guided turn. Review one or more faces; the app distinguishes ambiguous views, partial matches, full six-face matches, and common single-turn mistakes. Conditional repair instructions help undo an identified mistake.
 - **Case detective:** seven visual challenges using real cube states, highlighted stickers, hints, accessible color descriptions, and explanations for yellow shapes, edge slots, and a corner’s home.
 - **Together time:** parent-and-child rounds with alternating caller/turner roles, a reveal/predict/turn/discuss flow, gentle wrong-move feedback, and shared discoveries.
-- **Grown-up corner:** read-aloud instructions, slower motion, face labels, parent-confirmed milestones, deliberate starting-stage overrides, and learning-progress reset. Overrides open practice without awarding mastery or graduation; the controls are not password protection. System reduced-motion preferences are respected.
+- **Settings & grown-up corner:** Light, Dark, or Follow my Mac appearance; larger teaching text; reduced motion; read-aloud, slower turns and face labels; saved camera auto-capture choice; parent milestones and starting-stage overrides. Clear timer history, restore lesson locks, or deliberately reset all learning progress. Overrides open practice without awarding mastery or graduation; the controls are not password protection.
 - **Discovery badges:** effort and learning count. There are no leaderboards, accounts, advertising, or streak penalties. Timing is optional.
 
 ## Try it in two minutes
@@ -58,6 +58,18 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 2. Answer the question, choose **Practice from memory**, then complete **Check myself** to master the first lesson and unlock the next. A parent can adjust the starting stage in **Grown-up corner**.
 3. Open **Practice playground**. Make a turn and undo it. Drag the cube to see its hidden faces.
 4. Open **Solve my cube → Try a sample cube → Show me the steps** to exercise the complete solver without a camera.
+
+## Make it yours
+
+Open **Settings & grown-up corner** in the sidebar, or **Cube Club → Settings…** (⌘,).
+
+- **Look & feel:** choose Light, Dark, or Follow my Mac. The native window follows the same appearance; the cube’s sticker colors stay unchanged. Larger text increases teaching copy and controls. Reduce motion shows turn results without spinning, and also respects the Mac’s Reduce Motion setting.
+- **Learning & camera:** choose read-aloud instructions, slower animated turns, center face letters, and automatic capture when a face is steady. Changing auto-capture inside a scan also saves the choice for the next scan or move check. The camera still starts only when requested and every capture needs review.
+- **Progress:** manage parent confirmations and starting-stage overrides. **Clear times…** removes timer history while preserving lesson progress and timer access. **Restore lesson locks** removes parent overrides while preserving earned mastery and graduations.
+
+To start over, open **Progress → Reset all progress…**. Review the explanation, check the acknowledgement, and confirm. This clears all learning milestones, discoveries, practice records, solve counts, parent overrides, and times; it returns the learning path to the first beginner lesson and locks the optional timer. Appearance, accessibility, voice, pacing, labels, and camera preferences remain saved. Cancel leaves everything unchanged. Reset cannot be undone; there is no automatic reset during an update.
+
+Settings and progress stay on this Mac. This release uses one learner profile; it does not sync progress or provide backup export/import.
 
 ## Follow Cube Quest
 
@@ -123,6 +135,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Algorithm inverse setups, quiz data, daisy petals, Sune orientation, and middle-layer insertion setup.
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
+- Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
 - Twenty deterministic 25-move scrambles, each solved and verified end-to-end.
 - Every requested move against no turn and all 18 possible single turns, with exact-state repair verification.
 - Partial/ambiguous observations, unknown stickers, wrong centers, multi-turn divergence, and adaptive face selection.

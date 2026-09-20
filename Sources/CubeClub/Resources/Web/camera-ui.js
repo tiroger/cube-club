@@ -131,7 +131,7 @@ function teachCameraCenter(){
   cameraPalette=result.profile;v.tracker.reset();v.result=null;
   renderScan();$('#scan-error').textContent=`Learned your ${COLOR_NAMES[v.face]}. ${CubeClubVision.profileReady(cameraPalette)?'All six colors are ready. Close the color panel to capture.':'Choose another face tab to teach the next center.'}`;
 }
-document.addEventListener('change',e=>{if(e.target.matches('[data-camera-auto]')&&scan){scan.autoCapture=e.target.checked;updateCameraFeedback();}});
+document.addEventListener('change',e=>{if(e.target.matches('[data-camera-auto]')&&scan){scan.autoCapture=e.target.checked;progress.preferences.autoCapture=scan.autoCapture;save();updateCameraFeedback();}});
 document.addEventListener('toggle',e=>{if(e.target.id==='color-teaching'&&scan){const changed=scan.calibrating!==e.target.open;scan.calibrating=e.target.open;if(changed){const v=cameraState();v.tracker.reset();v.result=null;updateCameraFeedback();}}},true);
 // A paused/disconnected stream cannot leave an enabled capture button behind.
 setInterval(()=>{if(scan?.camera){updateCameraFeedback();if(lastFrame)drawCamera(lastFrame);}},700);

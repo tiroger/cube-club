@@ -53,7 +53,7 @@ async function makeTeamTurn(move){
  const current=session,expected=current.round.algorithm[current.round.index];
  if(move!==expected){current.feedback='Almost! Ask your caller to say the move again. Your cube is right where you left it.';updateTeam();autoSpeak(current.feedback);return;}
  busy=true;current.feedback='';updateTeam();
- await view.turn(move,window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:progress.slow?800:350);
+ await view.turn(move,turnDuration());
  if(session!==current)return;
  busy=false;current.round=Coach.teamTransition(current.round,'turn',move);updateTeam();autoSpeak('What changed? Tell each other something you noticed.');
 }
@@ -64,7 +64,7 @@ function startMoveCheck(){
  const move=session.algorithm[session.index-1];
  const before=session.initial.clone().move(session.algorithm.slice(0,session.index-1).join(' ')).asString();
  const first=Coach.inspectMove(before,move).nextFace;
- scan={mode:'check',index:scanOrder.indexOf(first),faces:Object.fromEntries(FACES.map(f=>[f,Array.from({length:9},(_,i)=>i===4?f:'?')])),confirmed:new Set(),color:'F',camera:false,solving:false,check:{before,move,owner:session,step:session.index}};
+ scan={autoCapture:progress.preferences.autoCapture,mode:'check',index:scanOrder.indexOf(first),faces:Object.fromEntries(FACES.map(f=>[f,Array.from({length:9},(_,i)=>i===4?f:'?')])),confirmed:new Set(),color:'F',camera:false,solving:false,check:{before,move,owner:session,step:session.index}};
  renderScan();
 }
 function checkReport(){const observations=Object.fromEntries([...scan.confirmed].map(f=>[f,scan.faces[f].join('')]));return Coach.inspectMove(scan.check.before,scan.check.move,observations);}

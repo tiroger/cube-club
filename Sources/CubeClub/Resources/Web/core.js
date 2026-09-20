@@ -48,11 +48,18 @@
     if(hue<175) return 'F';
     return 'B';
   }
+  function normalizePreferences(input) {
+    const p=input&&typeof input==='object'?input:{};
+    return {appearance:['system','light','dark'].includes(p.appearance)?p.appearance:'system',textSize:p.textSize==='large'?'large':'standard',reduceMotion:p.reduceMotion===true,autoCapture:p.autoCapture!==false};
+  }
+  function resetLearningProgress(progress) {
+    return normalizeProgress({preferences:progress.preferences,voice:progress.voice,slow:progress.slow,labels:progress.labels});
+  }
   function normalizeProgress(input) {
     const x=input && typeof input==='object'?input:{};
-    return {quest:root.CubeClubQuest?.normalize(x.quest)||{},learningLevel:x.learningLevel==='next'?'next':'beginner',patternPractice:root.CubeClubNext?.normalizePractice(x.patternPractice)||{},completed:Array.isArray(x.completed)?[...new Set(x.completed.filter(id=>LESSONS.some(l=>l.id===id)))]:[],moves:Number.isFinite(x.moves)?Math.max(0,Math.floor(x.moves)):0,solves:Number.isFinite(x.solves)?Math.max(0,Math.floor(x.solves)):0,quiz:Array.isArray(x.quiz)?[...new Set(x.quiz.filter(id=>LESSONS.some(l=>l.id===id)))]:[],detective:Array.isArray(x.detective)?[...new Set(x.detective.filter(id=>['yellow-line','yellow-elbow','yellow-dot','yellow-cross','edge-right','edge-left','corner-home'].includes(id)))]:[],teamRounds:Number.isFinite(x.teamRounds)?Math.max(0,Math.floor(x.teamRounds)):0,moveChecks:Number.isFinite(x.moveChecks)?Math.max(0,Math.floor(x.moveChecks)):0,voice:!!x.voice,labels:x.labels!==false,slow:x.slow!==false};
+    return {preferences:normalizePreferences(x.preferences),quest:root.CubeClubQuest?.normalize(x.quest)||{},learningLevel:x.learningLevel==='next'?'next':'beginner',patternPractice:root.CubeClubNext?.normalizePractice(x.patternPractice)||{},completed:Array.isArray(x.completed)?[...new Set(x.completed.filter(id=>LESSONS.some(l=>l.id===id)))]:[],moves:Number.isFinite(x.moves)?Math.max(0,Math.floor(x.moves)):0,solves:Number.isFinite(x.solves)?Math.max(0,Math.floor(x.solves)):0,quiz:Array.isArray(x.quiz)?[...new Set(x.quiz.filter(id=>LESSONS.some(l=>l.id===id)))]:[],detective:Array.isArray(x.detective)?[...new Set(x.detective.filter(id=>['yellow-line','yellow-elbow','yellow-dot','yellow-cross','edge-right','edge-left','corner-home'].includes(id)))]:[],teamRounds:Number.isFinite(x.teamRounds)?Math.max(0,Math.floor(x.teamRounds)):0,moveChecks:Number.isFinite(x.moveChecks)?Math.max(0,Math.floor(x.moveChecks)):0,voice:!!x.voice,labels:x.labels!==false,slow:x.slow!==false};
   }
-  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,parity,sampleColor,normalizeProgress};
+  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,parity,sampleColor,normalizeProgress,normalizePreferences,resetLearningProgress};
   let initialized=false;
   root.solveCubeRequest=function(facelets) {
     const check=validate(facelets);

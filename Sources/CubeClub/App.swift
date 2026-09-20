@@ -31,6 +31,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         menu.addItem(appItem)
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About Cube Club", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        appMenu.addItem(settingsItem)
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Cube Club", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
@@ -42,6 +45,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         }
         editItem.submenu = editMenu
         NSApplication.shared.mainMenu = menu
+        if let raw = UserDefaults.standard.string(forKey: "progress.v1"), let data = raw.data(using: .utf8),
+           let saved = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+           let preferences = saved["preferences"] as? [String: Any] {
+            applyAppearance(preferences["appearance"] as? String ?? "system")
+        }
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "native")
         webView = WKWebView(frame: .zero, configuration: config)
@@ -50,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1320, height: 860), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = "Cube Club"
         window.minSize = NSSize(width: 1024, height: 720)
-        window.backgroundColor = NSColor(calibratedRed: 0.97, green: 0.97, blue: 0.94, alpha: 1)
+        window.backgroundColor = .windowBackgroundColor
         window.contentView = webView
         window.delegate = self
         window.center()
@@ -113,12 +121,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             speech.speak(utterance)
             reply(id, ["ok": true])
         case "stopSpeech": speech.stopSpeaking(at: .immediate); reply(id, ["ok": true])
+        case "appearance":
+            let mode = body["mode"] as? String ?? "system"
+            guard ["system", "light", "dark"].contains(mode) else { reply(id, ["error": "Unknown appearance."]); return }
+            applyAppearance(mode)
+            reply(id, ["ok": true])
         case "loadProgress": reply(id, ["value": UserDefaults.standard.string(forKey: "progress.v1") ?? "{}"])
         case "saveProgress":
-            if let value = body["value"] as? String, value.utf8.count < 32000 { UserDefaults.standard.set(value, forKey: "progress.v1") }
+            guard let value = body["value"] as? String, value.utf8.count < 32000,
+                  let data = value.data(using: .utf8), (try? JSONSerialization.jsonObject(with: data)) is [String: Any] else {
+                reply(id, ["error": "Progress could not be saved."]); return
+            }
+            UserDefaults.standard.set(value, forKey: "progress.v1")
             reply(id, ["ok": true])
         default: reply(id, ["error": "Unknown action."])
         }
+    }
+
+    @objc private func openSettings() { send("window.openSettings", arguments: []) }
+    private func applyAppearance(_ mode: String) {
+        NSApplication.shared.appearance = mode == "dark" ? NSAppearance(named: .darkAqua) : mode == "light" ? NSAppearance(named: .aqua) : nil
     }
 
     private func reply(_ id: Int, _ result: [String: Any]) { send("window.nativeResult", arguments: [id, result]) }

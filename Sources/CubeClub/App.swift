@@ -102,7 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
                     self.reply(id, result ?? ["error": "Please try scanning again."])
                 }
             }
-        case "cameraStart": camera.start { [weak self] result in self?.reply(id, result) }
+        case "cameraStart": camera.start(token: body["token"] as? String ?? "") { [weak self] result in self?.reply(id, result) }
         case "cameraStop": camera.stop(); reply(id, ["ok": true])
         case "speak":
             speech.stopSpeaking(at: .immediate)
@@ -131,21 +131,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
 }
 
 final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
-    var onFrame: ((String) -> Void)?
-    var onError: ((String) -> Void)?
+    var onFrame: (([String: Any]) -> Void)?
+    var onError: (([String: Any]) -> Void)?
     private let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "club.cube.camera")
     private let context = CIContext()
+    private lazy var vision = CubeVision(context: context)
+    private var streamToken = ""
+    private var frameSequence = 0
     private var lastFrame = CFAbsoluteTimeGetCurrent()
     private var wantsCamera = false
     private var requestGeneration = 0
     private var observer: NSObjectProtocol?
 
-    func start(completion: @escaping ([String: Any]) -> Void) {
+    func start(token: String, completion: @escaping ([String: Any]) -> Void) {
         queue.async { [self] in
             self.requestGeneration += 1
             let generation = self.requestGeneration
             self.wantsCamera = true
+            self.streamToken = token
+            self.frameSequence = 0
             switch AVCaptureDevice.authorizationStatus(for: .video) {
             case .authorized: self.configure(generation: generation, completion)
             case .notDetermined:
@@ -169,7 +174,7 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                     output.alwaysDiscardsLateVideoFrames = true
                     output.setSampleBufferDelegate(self, queue: self.queue)
                     self.session.beginConfiguration()
-                    self.session.sessionPreset = .medium
+                    self.session.sessionPreset = .high
                     guard self.session.canAddInput(input), self.session.canAddOutput(output) else {
                         self.session.commitConfiguration()
                         completion(["error": "This camera is unavailable. Try manual color entry."]); return
@@ -182,7 +187,10 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                         connection.isVideoMirrored = false
                     }
                     self.observer = NotificationCenter.default.addObserver(forName: .AVCaptureSessionRuntimeError, object: self.session, queue: nil) { [weak self] _ in
-                        self?.onError?("The camera stopped. Try again, or use manual colors.")
+                        self?.queue.async { [weak self] in
+                            guard let self, self.wantsCamera else { return }
+                            self.onError?(["token": self.streamToken, "message": "The camera stopped. Try again, or use manual colors."])
+                        }
                     }
                 } catch { completion(["error": "Could not open the camera. Try manual color entry."]); return }
             }
@@ -194,15 +202,17 @@ final class CubeCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     func stop() { queue.async { self.requestGeneration += 1; self.wantsCamera = false; if self.session.isRunning { self.session.stopRunning() } } }
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let now = CFAbsoluteTimeGetCurrent()
-        guard wantsCamera, now - lastFrame > 0.16, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        guard wantsCamera, now - lastFrame > 0.20, let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastFrame = now
         let image = CIImage(cvPixelBuffer: buffer)
-        let scale = min(1, 720 / image.extent.width)
+        let scale = min(1, 960 / image.extent.width)
         let scaled = image.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return }
         let bitmap = NSBitmapImageRep(cgImage: cgImage)
         guard let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.72]) else { return }
-        onFrame?("data:image/jpeg;base64," + data.base64EncodedString())
+        let analysis = vision.analyze(scaled)
+        frameSequence += 1
+        onFrame?(["token": streamToken, "sequence": frameSequence, "image": "data:image/jpeg;base64," + data.base64EncodedString(), "vision": analysis])
     }
     deinit { if let observer = observer { NotificationCenter.default.removeObserver(observer) } }
 }

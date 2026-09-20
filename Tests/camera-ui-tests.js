@@ -1,0 +1,51 @@
+(function(){
+  let checks=0;
+  function assert(value,message){if(!value)throw Error(message);checks++;}
+  const originalNow=Date.now;let clock=10000;Date.now=()=>clock;
+  const colors={U:[245,215,30],R:[235,110,25],F:[25,160,65],D:[235,235,225],L:[210,35,45],B:[35,85,210]};
+  const makeScan=()=>({index:0,faces:Object.fromEntries(FACES.map(f=>[f,Array.from({length:9},(_,i)=>i===4?f:'?')])),confirmed:new Set(),camera:true,cameraToken:'test',autoCapture:true});
+  const reading=()=>({status:'found',gridScore:.95,corners:[[.2,.2],[.7,.2],[.7,.8],[.2,.8]],patches:[...'URFDFLBRU'].map(c=>({rgb:colors[c],spread:1,clipped:0}))});
+  let sequence=0;
+  function frame(load=true,token='test'){
+    clock+=210;
+    const count=imageLoads.length;
+    onCameraFrame({token,sequence:++sequence,image:'data:image/jpeg;base64,fixture',vision:reading()});
+    const image=imageLoads.length>count?imageLoads.at(-1):null;
+    if(load&&image)image.onload();
+    return image;
+  }
+  scan=makeScan();
+  for(let i=0;i<5;i++)frame();
+  assert(scan.faces.F.includes('?'),'No early auto-capture');frame();
+  assert(scan.faces.F.join('')==='URFDFLBRU','Stable frame automatically suggests nine colors');
+  assert(!scan.confirmed.has('F'),'Auto-capture requires user review');
+  scan.faces.F[0]='D';lockCameraFace();for(let i=0;i<8;i++)frame();
+  assert(scan.faces.F[0]==='D','More camera frames do not overwrite a correction');
+  scan.vision=null;for(let i=0;i<6;i++)frame();
+  assert(scan.faces.F[0]==='D','Restarting vision preserves review lock');
+  captureFace(false);assert(scan.faces.F[0]==='U','Explicit re-read can replace reviewed colors');
+  const late=frame(false);scan=makeScan();scan.cameraToken='new-session';late.onload();
+  assert(scan.faces.F.includes('?')&&scan.vision===undefined,'Late image cannot enter a different session');
+  assert(frame(true)===null,'Old native stream token is ignored');
+  scan=makeScan();sequence=0;const older=frame(false),newer=frame(false);newer.onload();const timestamp=lastFrameTime;older.onload();
+  assert(lastFrameTime===timestamp,'Out-of-order decoded image is ignored');
+  scan=makeScan();sequence=0;scan.autoCapture=false;for(let i=0;i<6;i++)frame();
+  assert(scan.faces.F.includes('?'),'Automatic capture can be turned off');
+  captureFace(false);assert(!scan.faces.F.includes('?'),'Manual capture uses stable vision evidence');
+  scan=makeScan();sequence=0;scan.calibrating=true;for(let i=0;i<6;i++)frame();
+  assert(scan.faces.F.includes('?'),'Teaching mode pauses automatic capture');
+  teachCameraCenter();assert(cameraPalette.F?.length===3,'Explicit center teaching learns current RGB');
+  assert(!cameraState().result,'Teaching invalidates old color evidence');
+  scan=makeScan();sequence=0;scan.autoCapture=false;for(let i=0;i<6;i++)frame();
+  clock+=2000;captureFace(false);assert(scan.faces.F.includes('?'),'Paused stream cannot capture an old result');
+  updateCameraFeedback();assert($('[data-action="captureFace"]').disabled,'Stale stream disables capture control');
+  scan=makeScan();sequence=0;scan.faces.F[0]='L';lockCameraFace();for(let i=0;i<6;i++)frame();
+  assert(scan.faces.F[0]==='L','Manual painting before first auto-capture is protected');
+  scan.index=1;for(let i=0;i<6;i++)frame();
+  assert(scan.faces.R.includes('?'),'Wrong center on next face never captures');
+  scan=makeScan();sequence=0;scan.solving=true;for(let i=0;i<6;i++)frame();captureFace(false);
+  assert(scan.faces.F.includes('?'),'A pending solve cannot receive new camera edits');
+  assert($('[data-action="captureFace"]').disabled,'Live feedback cannot re-enable capture during solving');
+  Date.now=originalNow;
+  return `${checks} camera bridge checks passed: automatic capture, review locks, calibration, stream identity and stale frames.`;
+})();

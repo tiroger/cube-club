@@ -42,3 +42,17 @@ Native checks used a separate `club.cube.mac.qa` application identity so the tes
 - Quit and relaunched the isolated app; the shared-round and six-face-review badges remained earned.
 
 The snapshot-review tests used manually entered synthetic fixture colors, not a photographed physical cube. Camera classification and repair advice still need a hands-on test with the learner’s cube under real lighting. No claim of continuous tracking or independently measured vision accuracy is made.
+
+## Version 0.3 — on-device cube vision
+
+The complete suite passes **2,510 checks**: the existing 2,219, 62 color/temporal-evidence checks, 20 camera bridge integration checks, and 209 native image/geometry checks.
+
+Native Vision/Core Image tests use procedurally generated pixels, including flat, tilted, off-center, and six uniform solved-color faces. They check automatic localization without supplied corners, perspective-corrected row-major sampling, sticker-lattice proposals, blank-square rejection, substantial occlusion, clipped corners, and a cube too small to capture. A separate PNG decoder verifies the preview's sticker positions independently of the sampler. This caught a vertical row-order issue during visual QA; it is fixed and covered by that independent test.
+
+Color/evidence checks cover all six default and taught colors, exposure changes, incomplete and indistinguishable calibration, dark/uneven/glared patches, changing colors, wrong centers, geometric motion, stale/duplicate evidence, and stream interruptions. Bridge tests hold image decoding callbacks to check old-session and out-of-order delivery. They also verify one-shot capture, explicit recapture, manual-edit preservation across restarts, teaching-mode capture suspension, stale-control disabling, and protection while solving.
+
+The isolated **Cube Club Vision QA** bundle (`club.cube.mac.visionqa`) used a generated tilted-face image and its real native detector output, repeated through the same image/analysis bridge. It did not open the camera or alter the learner's saved progress. Visual inspection verified the moving-face outline, matching preview/review sticker order, automatic capture, manual corrections remaining intact under ongoing frames, wrong-center rejection, and the optional center-teaching controls. A sample scan still produced the native 17-move solve; after D2, the shared vision panel opened inside the paused move checker. Production resources do not include that QA frame source.
+
+The native image tests need macOS graphics services. In a restricted command sandbox, Core Image returned empty pixel buffers; tests passed with graphics access. This is an environment constraint, not a camera fallback. The production app reports unavailable vision and keeps manual entry available if detection fails.
+
+Remaining hardware validation: use the learner's physical cube, test common sticker and stickerless finishes with the actual webcam, vary room light/glare/distance/tilt/background, and record detection and color error rates. Synthetic checks establish geometry and integration behavior; they do not establish real-world accuracy. This version locates visible faces and checks reviewed snapshots; it does not continuously infer physical turns or unseen stickers.

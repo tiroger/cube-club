@@ -75,3 +75,16 @@ Removed the shared five-frame-per-second preview/detection loop. A dedicated pre
 The real encoder → native WebKit call → JavaScript Image decode → camera canvas path sustained **30.0 fps**, with **2–5 ms p95 capture-to-draw latency** across two runs, using generated 1280×720 frames in the test window on this build Mac. Analysis was deliberately delayed by 350 ms plus a further 250 ms consumer delay; video continued independently. These are synthetic pipeline measurements, not webcam measurements or a guarantee on other Macs. The user's webcam and physical cube still need a hands-on check after installing the update. The test uses a nonpersistent WebKit data store and never requests camera access or modifies saved learner progress.
 
 Rebuilt and verified `Cube-Club-0.3.1-arm64.dmg`, including both local signatures, exact app contents, image integrity, read-only mounting, Applications shortcut, background, and corrected icon-label positions.
+
+
+## Version 0.4 — direct cross and intuitive F2L
+
+The suite passes **2,728 checks**, including 18 extra checks for the six new lesson setups and 176 dedicated curriculum/practice checks. Starting facelets independently verify the advertised edge locations, white orientation, and shared-color alignment. Tests track every target piece through every turn, check that ready-pair insertions never separate the pieces, confirm the pair-building example joins the pieces at its fifth move, and verify final restoration of the cross and other F2L slots. All eight practice setups are legal; linked demonstrations start with exactly the same cube. Progress migration preserves existing lessons, filters unknown/corrupt data, and prioritizes cases needing another look. The previous native vision tests, solver checks, and 30 fps synthetic preview test still pass.
+
+Browser UI checks completed the right-pair insertion and its quiz, exercised a wrong recognition answer followed by a correction, confirmed that the missed case starts the next three-case review, and completed that review. A reload retained the selected learning stage and completed lesson. Inspected the chapter, tracked-piece lesson, recognition screen, and expanded six-face diagrams at 1280×720 and 1024×720. The face-map disclosure stays open across move updates.
+
+The separate **Cube Club Learning QA** bundle (`club.cube.mac.learningqa`) uses its own saved-progress identity. Native checks exercised the next-step navigation and completed the direct-cross memory lesson and its quiz, including a wrong guess that left the cube unchanged. Stepping backward preserved the expanded six-face map. Quitting and relaunching retained the completed lesson and Next steps selection. The production learner’s stored progress is not modified by QA. No camera access is needed for the new lessons.
+
+Scope: this release adds six prepared lessons and eight recognition cases. They are teaching examples, not an exhaustive F2L case library or a method-aware scanned-cube solver. Existing camera scanning and the general verified solver remain available.
+
+Built and verified `Cube-Club-0.4.0-arm64.dmg`: the app resources match the tested source, the image and app pass their local signature checks, and the package validates its contents, background, Applications shortcut, and corrected icon positions.

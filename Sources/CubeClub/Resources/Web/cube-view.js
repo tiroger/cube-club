@@ -59,6 +59,7 @@
       const project=p=>{const v=view(p),perspective=8/(8-v[2]);return [w/2+v[0]*scale*perspective,h/2-v[1]*scale*perspective,v[2]];};
       ctx.save();ctx.translate(w/2,h*.88);ctx.scale(1,.2);const grd=ctx.createRadialGradient(0,0,0,0,0,scale*1.7);grd.addColorStop(0,'#193f3430');grd.addColorStop(1,'#193f3400');ctx.fillStyle=grd;ctx.fillRect(-scale*2,-scale*2,scale*4,scale*4);ctx.restore();
       const facelets=this.cube.asString();const polygons=[];
+      const highlights=this.highlightPieces?CubeClubNext.pieceIndices(facelets,this.highlightPieces):this.highlightIndices;
       for(let i=0;i<54;i++){
         const geo=faceletGeometry(i);let points=geo.points,normal=geo.normal,center=geo.center;
         if(this.animation && center[this.animation.axis]*this.animation.sign>.9){const a=this.animation;points=points.map(p=>rotate(p,a.axis,a.angle));normal=rotate(normal,a.axis,a.angle);center=rotate(center,a.axis,a.angle);}
@@ -69,7 +70,7 @@
       for(const poly of polygons){
         const p=poly.points;ctx.beginPath();
         // Rounded polygon corners keep the cube soft while preserving real face geometry.
-        for(let i=0;i<4;i++){const prev=p[(i+3)%4],cur=p[i],next=p[(i+1)%4];const a=[cur[0]+(prev[0]-cur[0])*.085,cur[1]+(prev[1]-cur[1])*.085],b=[cur[0]+(next[0]-cur[0])*.085,cur[1]+(next[1]-cur[1])*.085];if(i===0)ctx.moveTo(...a);else ctx.lineTo(...a);ctx.quadraticCurveTo(cur[0],cur[1],...b);}ctx.closePath();ctx.lineJoin='round';ctx.lineWidth=scale*.075;ctx.strokeStyle='#25493f';ctx.stroke();ctx.fillStyle=poly.color;ctx.fill();if(this.highlightIndices?.includes(poly.index)){ctx.lineWidth=scale*.055;ctx.strokeStyle='#fff9de';ctx.stroke();}
+        for(let i=0;i<4;i++){const prev=p[(i+3)%4],cur=p[i],next=p[(i+1)%4];const a=[cur[0]+(prev[0]-cur[0])*.085,cur[1]+(prev[1]-cur[1])*.085],b=[cur[0]+(next[0]-cur[0])*.085,cur[1]+(next[1]-cur[1])*.085];if(i===0)ctx.moveTo(...a);else ctx.lineTo(...a);ctx.quadraticCurveTo(cur[0],cur[1],...b);}ctx.closePath();ctx.lineJoin='round';ctx.lineWidth=scale*.075;ctx.strokeStyle='#25493f';ctx.stroke();ctx.fillStyle=poly.color;ctx.globalAlpha=this.highlightPieces&&!highlights.includes(poly.index)&&!poly.label?0.42:1;ctx.fill();ctx.globalAlpha=1;if(highlights?.includes(poly.index)){ctx.lineWidth=scale*.055;ctx.strokeStyle='#fff9de';ctx.stroke();}
         if(this.labels&&poly.label){ctx.font=`700 ${Math.round(scale*.24)}px ui-rounded, system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#1d443dc0';ctx.fillText(poly.label,poly.center[0],poly.center[1]);}
       }
     }

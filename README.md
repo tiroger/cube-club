@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.3.1-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.4.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -36,7 +36,9 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 ## What’s here
 
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
-- **Nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
+- **First solve — nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
+- **Next steps — six more missions:** direct white-cross insertion, alignment and restoration; ready F2L pairs on the right and left; and an introductory pair-building case. Follow the actual corner/edge stickers through each turn, with per-move explanations and six-face diagrams.
+- **Pattern practice:** eight cross/F2L recognition cases, gentle hints, links to the matching animated lesson, and three-case reviews that prioritize mistakes before new and less-practiced cases.
 - **An actual cube model:** drag to orbit; turn any face; watch the layer rotate; undo; scramble; return to a fresh cube. The animation geometry is tested against the solver’s permutation model for all 18 moves.
 - **Learn, then recall:** step through a pattern, watch a slow replay, try the next move from memory, request a hint, and answer a short discovery question. Every algorithm includes its use case and an explanation.
 - **Solve my cube:** six-face camera capture, suggested colors, manual painting and rotation, full physical-state validation, and a verified move-by-move solution.
@@ -53,6 +55,14 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 2. Open **The right-hand move**. Try **Watch the full pattern**, then **Try from memory**.
 3. Open **Practice playground**. Make a turn and undo it. Drag the cube to see its hidden faces.
 4. Open **Solve my cube → Try a sample cube → Show me the steps** to exercise the complete solver without a camera.
+
+## Grow beyond the first solve
+
+Open **Learning path → Next steps**. The first three lessons teach direct white-cross ideas; the next three introduce intuitive F2L (first two layers). Keep yellow on top and green in front. Follow the outlined pieces on the 3D cube, or expand **Find the outlined pieces on all six sides**. **Show me how**, **Try from memory**, read-aloud, replay, and backward steps work here too.
+
+Choose **Pattern practice** below the six lessons (also available from Case detective). Pick any case, or start a three-case review. A case that needed another guess comes back in a future review; a correct first try clears that reminder. The **Watch this plan** button opens the lesson with the same prepared cube, except the cross-first case explicitly links to a separate cross example. There are no speed requirements or locked levels. Switching back to **First solve** preserves all progress and its original completion badge.
+
+These are introductory examples, not a complete catalogue of cross or F2L cases. Read the orientation and starting-sticker instructions before trying a sequence on a real cube. The scanned-cube solver still returns a verified general solution; it does not yet produce a method-specific beginner or CFOP teaching solve. Camera case recognition and later two-look/full last-layer curricula are future additions.
 
 ## Scan a real cube
 
@@ -105,6 +115,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Seven legal challenge cases, complete shared-round state transitions, uncertain camera patches, and migration of existing saved progress.
 - Native detection of generated flat, tilted, off-center, and solved-color faces; perspective-corrected sampling; independent preview row-order checks; and rejection of blank, tiny, clipped, and heavily occluded faces.
 - Color calibration, exposure variation, glare, temporal agreement, movement, interruptions, and wrong centers.
+- Next-step lesson preconditions, matching-pair geometry, highlighted-piece tracking after every move, restoration of the cross and finished slots, recognition-case setups, review priority, and saved-progress migration.
 - Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order preview/analysis packets, calibration, and pending-solve protection.
 - Independent preview/detection queues, bounded delivery until WebKit finishes decoding, stop/restart isolation, and preview throughput with deliberately slow analysis.
 
@@ -118,7 +129,9 @@ Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, b
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
   app.js                                  Lessons, practice, scanning and interaction state
-  core.js                                 Curriculum, scan validation, colors and solver guard
+  core.js                                 Beginner curriculum, scan validation, colors and solver guard
+  next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
+  next-ui.js                              Learning stages, diagrams and pattern practice
   coach-core.js                           Observation matching, challenge cases, shared-round state
   coach-ui.js                             Move checks, Case Detective, and Together Time
   vision-core.js                          Color calibration and temporal camera evidence
@@ -137,6 +150,7 @@ For layout work only, serve the `Web` folder with a local server. Browser previe
 ## References and credits
 
 - Original illustration, visual design, curriculum wording, and app code created for this project.
+- [CubeSkills F2L](https://www.cubeskills.com/tutorials/f2l) and [Optimising the Beginner’s Method](https://www.cubeskills.com/tutorials/optimising-the-beginners-method) informed the progression into direct cross planning and corner-edge pairs. The app’s explanations, diagrams, and practice cases are original; every taught setup is checked against the cube model.
 - [Official Rubik’s solution guides](https://www.rubiks.com/solution-guides) informed the beginner stage structure. No branded images or tutorial text were copied.
 - [cube.js by Petri Lehtinen and Ludovic Fernandez](https://github.com/ldez/cubejs/tree/v1.3.2), pinned to **v1.3.2**, provides the cubie model and two-phase solver. Its [MIT license](Sources/CubeClub/Resources/Web/vendor/LICENSE.cubejs) is included in source and bundled with the app.
 - Independent project; not affiliated with or endorsed by Rubik’s.

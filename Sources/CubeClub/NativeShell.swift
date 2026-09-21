@@ -17,7 +17,7 @@ struct ClubDestination {
     ]
 }
 
-/// AppKit supplies the compact title bar; the sidebar shares the teaching canvas’s design.
+/// The branded Mac toolbar and clubhouse sidebar share one continuous color treatment.
 final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
     private weak var window: NSWindow?
     private var command: (String) -> Void
@@ -26,6 +26,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
     private var parent = ""
     private var voice = false
     private var sidebarHidden = false
+    private let brandButton = ClubBrandButton(frame: .zero)
     private var items: [String: NSToolbarItem] = [:]
 
     init(window: NSWindow, webView: WKWebView, savesWindowLayout: Bool = true, command: @escaping (String) -> Void) {
@@ -33,7 +34,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         self.command = command
         super.init()
         let content = NSViewController()
-        content.view = NSView()
+        content.view = ClubChromeView()
         webView.translatesAutoresizingMaskIntoConstraints = false
         content.view.addSubview(webView)
         NSLayoutConstraint.activate([
@@ -48,9 +49,12 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         toolbar.delegate = self
         toolbar.displayMode = .iconOnly
         toolbar.allowsUserCustomization = false
-        window.toolbarStyle = .unifiedCompact
+        window.toolbarStyle = .unified
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = ClubPalette.chrome
         window.toolbar = toolbar
-        window.titlebarSeparatorStyle = .automatic
+        window.titlebarSeparatorStyle = .none
         if savesWindowLayout {
             window.setFrameAutosaveName("CubeClubWindow")
             if !window.setFrameUsingName("CubeClubWindow") { window.center() }
@@ -66,6 +70,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         voice = state["voice"] as? Bool ?? false
         let title = String((state["title"] as? String ?? "Cube Club").prefix(100))
         window?.title = title
+        brandButton.sectionTitle = title
         sidebarHidden = state["sidebarHidden"] as? Bool ?? false
         updateControls()
     }
@@ -77,6 +82,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
 
     private func updateControls() {
         for item in items.values { item.isEnabled = ready && !modal }
+        brandButton.isEnabled = ready && !modal
         items["back"]?.isEnabled = ready && !modal && !parent.isEmpty
         items["sidebar"]?.label = sidebarHidden ? "Show sidebar" : "Hide sidebar"
         items["sidebar"]?.toolTip = "\(sidebarHidden ? "Show" : "Hide") sidebar (⌃⌘S)"
@@ -89,10 +95,28 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.init("sidebar"), .init("back"), .flexibleSpace, .init("scan"), .init("voice"), .init("settings")]
+        [.init("brand"), .init("back"), .flexibleSpace, .init("sidebar"), .init("scan"), .init("voice"), .init("settings")]
     }
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { toolbarDefaultItemIdentifiers(toolbar) }
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
+        if id.rawValue == "brand" {
+            let item = NSToolbarItem(itemIdentifier: id)
+            brandButton.target = self
+            brandButton.action = #selector(goHome)
+            brandButton.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                brandButton.widthAnchor.constraint(equalToConstant: 238),
+                brandButton.heightAnchor.constraint(equalToConstant: 42)
+            ])
+            item.view = brandButton
+            item.label = "Cube Club home"
+            item.toolTip = "Go to my clubhouse (⌘1)"
+            item.isNavigational = true
+            item.visibilityPriority = .high
+            item.autovalidates = false
+            items["brand"] = item
+            return item
+        }
         let definitions = ["sidebar": ("Hide sidebar", "sidebar.left"), "back": ("Back", "chevron.left"), "scan": ("Solve my cube", "camera"), "voice": ("Turn read-aloud on", "speaker.slash"), "settings": ("Settings", "gearshape")]
         guard let definition = definitions[id.rawValue] else { return nil }
         let item = NSToolbarItem(itemIdentifier: id)
@@ -106,6 +130,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         items[id.rawValue] = item
         return item
     }
+    @objc private func goHome() { perform("home") }
     @objc private func toolbarCommand(_ sender: NSToolbarItem) { perform(sender.itemIdentifier.rawValue) }
     @objc private func menuCommand(_ sender: NSMenuItem) { if let action = sender.representedObject as? String { perform(action) } }
     @objc func openSettings() { perform("settings") }
@@ -147,4 +172,66 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         if action == "voice" { item.state = voice ? .on : .off }
         return ready && !modal && (action != "back" || !parent.isEmpty)
     }
+}
+
+private enum ClubPalette {
+    static func color(_ red: Int, _ green: Int, _ blue: Int) -> NSColor {
+        NSColor(srgbRed: CGFloat(red) / 255, green: CGFloat(green) / 255, blue: CGFloat(blue) / 255, alpha: 1)
+    }
+    static let chrome = NSColor(name: "ClubChrome") { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? color(28, 45, 35) : color(241, 243, 235)
+    }
+    static let ink = NSColor(name: "ClubInk") { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? color(237, 244, 237) : color(35, 63, 55)
+    }
+    static let muted = NSColor(name: "ClubMuted") { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? color(185, 201, 190) : color(123, 135, 125)
+    }
+}
+
+/// Paint behind the transparent title bar using the sidebar’s light/dark palette.
+private final class ClubChromeView: NSView {
+    override func draw(_ dirtyRect: NSRect) { ClubPalette.chrome.setFill(); dirtyRect.fill() }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
+}
+
+final class ClubBrandButton: NSButton {
+    var sectionTitle = "My clubhouse" {
+        didSet { needsDisplay = true; setAccessibilityHelp("\(sectionTitle). Go to my clubhouse.") }
+    }
+    override var isFlipped: Bool { true }
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        title = "Cube Club home"
+        isBordered = false
+        setButtonType(.momentaryPushIn)
+        setAccessibilityLabel("Cube Club home")
+        focusRingType = .exterior
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
+    override func draw(_ dirtyRect: NSRect) {
+        let opacity: CGFloat = isEnabled ? (isHighlighted ? 0.75 : 1) : 0.65
+        NSGraphicsContext.saveGraphicsState()
+        let tilt = AffineTransform(translationByX: 17, byY: 21)
+        var transform = tilt
+        transform.rotate(byDegrees: -9)
+        (transform as NSAffineTransform).concat()
+        let colors = [ClubPalette.color(57,131,101), ClubPalette.color(229,185,81), ClubPalette.color(238,151,115), ClubPalette.color(140,171,148)]
+        for index in 0..<4 {
+            colors[index].withAlphaComponent(opacity).setFill()
+            NSBezierPath(roundedRect: NSRect(x: (index % 2) * 15 - 14, y: (index / 2) * 15 - 14, width: 12, height: 12), xRadius: 3, yRadius: 3).fill()
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        let base = NSFont.systemFont(ofSize: 22, weight: .heavy)
+        let font = NSFont(descriptor: base.fontDescriptor.withDesign(.rounded) ?? base.fontDescriptor, size: 22) ?? base
+        let name = NSMutableAttributedString(string: "cube club", attributes: [.font: font, .foregroundColor: ClubPalette.ink.withAlphaComponent(opacity), .kern: -0.7])
+        name.append(NSAttributedString(string: ".", attributes: [.font: font, .foregroundColor: ClubPalette.color(214,153,80).withAlphaComponent(opacity)]))
+        name.draw(at: NSPoint(x: 40, y: 0))
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        NSAttributedString(string: sectionTitle, attributes: [.font: NSFont.systemFont(ofSize: 11, weight: .medium), .foregroundColor: ClubPalette.muted.withAlphaComponent(opacity), .paragraphStyle: paragraph]).draw(in: NSRect(x: 41, y: 27, width: 193, height: 15))
+    }
+    override func drawFocusRingMask() { NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill() }
+    override var focusRingMaskBounds: NSRect { bounds }
 }

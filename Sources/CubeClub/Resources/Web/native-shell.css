@@ -1,5 +1,9 @@
-/* Keep the original clubhouse design around the compact macOS toolbar. */
+/* Keep the original clubhouse design around the branded macOS toolbar. */
 :root[data-shell=mac] .topbar{display:none}
 :root[data-shell=mac] main{min-height:calc(100vh - 46px)}
 :root[data-shell=mac][data-sidebar-hidden=true] .sidebar{display:none}
 :root[data-shell=mac][data-sidebar-hidden=true] .main-shell{margin-left:0}
+/* The wordmark lives beside the traffic lights; navigation keeps its original styling. */
+:root[data-shell=mac] .sidebar>.brand{display:none}
+:root[data-shell=mac] .sidebar{padding-top:20px}
+:root[data-shell=mac] .sidebar-label{padding-top:8px}

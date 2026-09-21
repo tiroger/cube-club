@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.7.1-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.7.2-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -35,7 +35,7 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 
 ## What’s here
 
-- **A cohesive clubhouse with a Mac title bar:** the original branded sidebar, rounded type, matching theme colors, and illustrations alongside a compact native toolbar. Hide the sidebar for more room or use Mac keyboard shortcuts.
+- **A cohesive clubhouse with a Mac title bar:** Cube Club branding beside the Mac window controls, a toolbar that shares the sidebar’s colors, rounded type, and illustrations. Hide the sidebar for more room or use Mac keyboard shortcuts.
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
 - **Cube Quest — four stages and 23 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
 - **First solve — nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
@@ -74,7 +74,7 @@ Settings and progress stay on this Mac. This release uses one learner profile; i
 
 ## Mac navigation
 
-The packaged app combines a compact AppKit toolbar with the original clubhouse sidebar. Branding, rounded type, matching light/dark colors, learner profile, and footer share the teaching screens’ design. The window title follows the current lesson. The camera button opens cube review; it does not turn on the camera automatically. The speaker button controls read-aloud, and the gear opens settings. The extra website-style top header stays hidden in the Mac app.
+The packaged app puts the Cube Club wordmark beside the Mac window controls in a native AppKit toolbar. The toolbar and original clubhouse sidebar share a continuous light/dark background. The current page or lesson appears beneath the wordmark; click the wordmark to return home. Rounded type, green navigation highlights, the learner profile, and footer keep the teaching screens’ design. The duplicate sidebar wordmark and web top header are hidden only in the Mac app. The camera button opens cube review; it does not turn on the camera automatically. The speaker button controls read-aloud, and the gear opens settings. The extra website-style top header stays hidden in the Mac app.
 
 - **⌃⌘S:** show or hide the sidebar.
 - **⌘[**: return to the learning path from a lesson, or to the clubhouse from a main section.
@@ -149,7 +149,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
-- Toolbar and original-sidebar navigation, lesson titles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
+- Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
 - Twenty deterministic 25-move scrambles, each solved and verified end-to-end.
 - Every requested move against no turn and all 18 possible single turns, with exact-state repair verification.
 - Partial/ambiguous observations, unknown stickers, wrong centers, multi-turn divergence, and adaptive face selection.

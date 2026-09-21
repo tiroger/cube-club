@@ -57,9 +57,18 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
             reply(id,["ok": true])
         case "chromeState": shell.update(body); reply(id,["ok": true])
         case "shellTestCommand": shell.perform(body["command"] as! String); reply(id,["ok": true])
+        case "shellTestBrandClick":
+            let button = window.toolbar!.items.first { $0.itemIdentifier.rawValue == "brand" }!.view as! ClubBrandButton
+            button.performClick(nil)
+            reply(id,["ok": true])
         case "shellSnapshot":
             let item = { (name: String) in self.window.toolbar!.items.first { $0.itemIdentifier.rawValue == name }! }
-            reply(id,["title": window.title, "back": item("back").isEnabled, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "sidebar": item("sidebar").label, "contentWidth": web.bounds.width])
+            let brand = item("brand").view as! ClubBrandButton
+            let brandFrame = brand.convert(brand.bounds, to: nil)
+            reply(id,["brandTitle": brand.sectionTitle, "brandEnabled": brand.isEnabled,
+                      "brandFits": brandFrame.minX >= 0 && brandFrame.maxX <= window.frame.width && brandFrame.height >= 42,
+                      "integratedTitle": window.titleVisibility == .hidden && window.titlebarAppearsTransparent,
+                      "title": window.title, "back": item("back").isEnabled, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "sidebar": item("sidebar").label, "contentWidth": web.bounds.width])
         default: reply(id,["ok": true])
         }
     }

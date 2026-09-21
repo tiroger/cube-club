@@ -83,19 +83,15 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
     private func updateControls() {
         for item in items.values { item.isEnabled = ready && !modal }
         brandButton.isEnabled = ready && !modal
-        items["back"]?.isEnabled = ready && !modal && !parent.isEmpty
         items["sidebar"]?.label = sidebarHidden ? "Show sidebar" : "Hide sidebar"
         items["sidebar"]?.toolTip = "\(sidebarHidden ? "Show" : "Hide") sidebar (⌃⌘S)"
-        let parentName = ClubDestination.all.first { $0.id == parent }?.title ?? "My clubhouse"
-        items["back"]?.label = "Back to \(parentName)"
-        items["back"]?.toolTip = "Back to \(parentName) (⌘[)"
         items["voice"]?.image = NSImage(systemSymbolName: voice ? "speaker.wave.2.fill" : "speaker.slash", accessibilityDescription: nil)
         items["voice"]?.label = "Turn read-aloud \(voice ? "off" : "on")"
         items["voice"]?.toolTip = items["voice"]?.label
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.init("brand"), .init("back"), .flexibleSpace, .init("sidebar"), .init("scan"), .init("voice"), .init("settings")]
+        [.init("brand"), .flexibleSpace, .init("sidebar"), .init("scan"), .init("voice"), .init("settings")]
     }
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] { toolbarDefaultItemIdentifiers(toolbar) }
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
@@ -117,7 +113,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
             items["brand"] = item
             return item
         }
-        let definitions = ["sidebar": ("Hide sidebar", "sidebar.left"), "back": ("Back", "chevron.left"), "scan": ("Solve my cube", "camera"), "voice": ("Turn read-aloud on", "speaker.slash"), "settings": ("Settings", "gearshape")]
+        let definitions = ["sidebar": ("Hide sidebar", "sidebar.left"), "scan": ("Solve my cube", "camera"), "voice": ("Turn read-aloud on", "speaker.slash"), "settings": ("Settings", "gearshape")]
         guard let definition = definitions[id.rawValue] else { return nil }
         let item = NSToolbarItem(itemIdentifier: id)
         item.label = definition.0
@@ -126,7 +122,6 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         item.target = self
         item.action = #selector(toolbarCommand(_:))
         item.autovalidates = false
-        item.isNavigational = id.rawValue == "back"
         items[id.rawValue] = item
         return item
     }
@@ -144,7 +139,7 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
             item.representedObject = action
             go.addItem(item)
         }
-        add("Back", "back", "[")
+        add("Return to My clubhouse", "back", "[")
         go.addItem(.separator())
         for (index, destination) in ClubDestination.all.enumerated() { add(destination.title, destination.id, String(index + 1)) }
         let goItem = NSMenuItem(); goItem.submenu = go; menu.addItem(goItem)
@@ -170,6 +165,10 @@ final class ClubShell: NSObject, NSToolbarDelegate, NSMenuItemValidation {
         if item.action == #selector(openSettings) { return ready && !modal }
         guard let action = item.representedObject as? String else { return true }
         if action == "voice" { item.state = voice ? .on : .off }
+        if action == "back" {
+            let parentName = ClubDestination.all.first { $0.id == parent }?.title ?? "My clubhouse"
+            item.title = "Return to \(parentName)"
+        }
         return ready && !modal && (action != "back" || !parent.isEmpty)
     }
 }

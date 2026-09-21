@@ -17,6 +17,7 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     var window: NSWindow!
     var web: WKWebView!
     var shell: ClubShell!
+    let menu = NSMenu()
     var saved = "{}"
     var started = false
     let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -32,6 +33,7 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
             let json = String(data: try! JSONSerialization.data(withJSONObject: [action]), encoding: .utf8)!
             self?.web.evaluateJavaScript("window.nativeCommand(...\(json))")
         }
+        shell.addMenus(to: menu)
         // Avoid reading or writing app window-layout preferences in the test runner.
         window.setFrameAutosaveName("")
         window.setContentSize(NSSize(width: 1024,height: 720))
@@ -65,10 +67,12 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
             let item = { (name: String) in self.window.toolbar!.items.first { $0.itemIdentifier.rawValue == name }! }
             let brand = item("brand").view as! ClubBrandButton
             let brandFrame = brand.convert(brand.bounds, to: nil)
+            let parentItem = menu.items.first { $0.submenu?.title == "Go" }!.submenu!.items.first!
+            let parentAvailable = shell.validateMenuItem(parentItem)
             reply(id,["brandTitle": brand.sectionTitle, "brandEnabled": brand.isEnabled,
                       "brandFits": brandFrame.minX >= 0 && brandFrame.maxX <= window.frame.width && brandFrame.height >= 42,
                       "integratedTitle": window.titleVisibility == .hidden && window.titlebarAppearsTransparent,
-                      "title": window.title, "back": item("back").isEnabled, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "sidebar": item("sidebar").label, "contentWidth": web.bounds.width])
+                      "title": window.title, "parentAvailable": parentAvailable, "parentLabel": parentItem.title, "hasBackArrow": window.toolbar!.items.contains { $0.itemIdentifier.rawValue == "back" }, "scan": item("scan").isEnabled, "settings": item("settings").isEnabled, "voice": item("voice").label, "sidebar": item("sidebar").label, "contentWidth": web.bounds.width])
         default: reply(id,["ok": true])
         }
     }

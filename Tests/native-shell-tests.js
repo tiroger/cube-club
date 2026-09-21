@@ -9,21 +9,21 @@ assert(getComputedStyle($('.topbar')).display==='none','Duplicate web header sta
 for(const selector of ['.sidebar','.app-footer'])assert(getComputedStyle($(selector)).display!=='none','Original clubhouse design visible: '+selector);
 assert(getComputedStyle($('.sidebar>.brand')).display==='none','Mac sidebar has no duplicate wordmark');
 const selected=()=>document.querySelector('nav [aria-current="page"]')?.dataset.nav;
-let s=await snapshot();assert(s.title==='My clubhouse'&&!s.back&&selected()==='home','Native home title selection and back state');
+let s=await snapshot();assert(s.title==='My clubhouse'&&!s.parentAvailable&&!s.hasBackArrow&&selected()==='home','Home toolbar has no history arrow; parent shortcut is disabled');
 assert(s.integratedTitle&&s.brandFits&&s.brandTitle==='My clubhouse'&&s.brandEnabled,'Native wordmark and page subtitle fit the transparent toolbar');
 const startWidth=$('.main-shell').getBoundingClientRect().width;await command('sidebar');s=await snapshot();assert(getComputedStyle($('.sidebar')).display==='none'&&$('.main-shell').getBoundingClientRect().width>startWidth&&s.sidebar==='Show sidebar','Native toggle hides original sidebar and expands canvas');assert(s.brandTitle==='My clubhouse'&&s.brandEnabled,'Brand remains available with sidebar hidden');await command('sidebar');s=await snapshot();assert(getComputedStyle($('.sidebar')).display!=='none'&&s.sidebar==='Hide sidebar','Native toggle restores original sidebar');
 await click('nav [data-nav="play"]');s=await snapshot();assert(s.title==='Practice playground'&&selected()==='play','Original sidebar updates native title');
 for(const [destination,title] of [['learn','Cube Quest'],['play','Practice playground'],['detective','Case detective'],['team','Together time'],['timer','My solve timer'],['badges','My discoveries']]){
- await command(destination);s=await snapshot();assert(route===destination&&s.title===title&&selected()===destination&&s.back,'Native navigation: '+destination);assert(document.documentElement.scrollWidth<=innerWidth,'No content overflow: '+destination);
+ await command(destination);s=await snapshot();assert(route===destination&&s.title===title&&selected()===destination&&s.parentAvailable&&s.parentLabel==='Return to My clubhouse'&&!s.hasBackArrow,'Native navigation: '+destination);assert(document.documentElement.scrollWidth<=innerWidth,'No content overflow: '+destination);
 }
-await command('learn');startLesson('hello');s=await snapshot();assert(s.title==='Meet your cube'&&selected()==='learn'&&s.back,'In-content lesson updates native title and sidebar');
+await command('learn');startLesson('hello');s=await snapshot();assert(s.title==='Meet your cube'&&selected()==='learn'&&s.parentAvailable&&s.parentLabel==='Return to Cube Quest'&&!s.hasBackArrow,'Lesson updates native title, sidebar and explicit parent shortcut');
 assert(s.brandTitle==='Meet your cube','Toolbar brand subtitle follows the lesson');
 await bridge('shellTestBrandClick');await tick();assert(route==='home','Clicking the native wordmark goes home');
 await command('learn');startLesson('hello');
 busy=true;await command('play');await tick();s=await snapshot();assert(route==='lesson'&&selected()==='learn','Busy turn rejects navigation and keeps the original sidebar selection');busy=false;
-await command('back');assert(route==='learn','Native back returns lesson to quest');
+await command('back');assert(route==='learn','Parent shortcut returns lesson to quest');
 await command('voice');s=await snapshot();assert(progress.voice&&s.voice==='Turn read-aloud off','Native read-aloud toggle syncs');await command('voice');
-await command('scan');s=await snapshot();assert(scan&&!scan.camera&&s.title==='Solve my cube','Native camera command opens review without starting camera');assert(!s.back&&!s.scan&&!s.settings,'Native toolbar is disabled during scan review');
+await command('scan');s=await snapshot();assert(scan&&!scan.camera&&s.title==='Solve my cube','Native camera command opens review without starting camera');assert(!s.parentAvailable&&!s.scan&&!s.settings,'Native toolbar is disabled during scan review');
 await bridge('shellTestBrandClick');await tick();s=await snapshot();assert(!s.brandEnabled&&scan,'Native wordmark is disabled during scan review');
 await command('home');window.nativeCommand('home');assert(scan&&route==='learn','Native controls and direct commands cannot escape scan');closeModal();s=await snapshot();assert(selected()==='learn'&&s.settings,'Closing scan restores native destination and controls');
 await command('settings');s=await snapshot();assert($('.settings-modal')&&!s.scan,'Settings opens from toolbar and locks navigation');

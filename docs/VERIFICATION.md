@@ -148,3 +148,11 @@ Moved the Cube Club wordmark and four-color mark beside the window controls. The
 Visually inspected the isolated Cube Club Native QA app in Dark and Light with Larger text at the 1024-point minimum width. Verified matching toolbar/sidebar backgrounds, page navigation, clicking the brand to return home, disabled toolbar controls during settings, and hiding/restoring the sidebar. Entered and exited full screen; the wordmark and actions remain properly placed. Camera capture stayed off, and production learner data was not opened or changed.
 
 Built and verified `Cube-Club-0.7.2-arm64.dmg`. Tested web resources match the embedded app; app and image signatures, exact packaged contents, read-only volume, Applications link, original installer artwork and corrected Finder icon positions pass verification. SHA-256: `b133218bed9be5f3314271213b98d3327520f0f8033eca968f97e48bef59ef9e`. Existing local signing and public-distribution limitations are unchanged.
+
+## Version 0.7.3 — remove the misleading toolbar arrow
+
+Removed the toolbar’s Back arrow: it was a parent-page shortcut, with no navigation history and no destination on home. The Go menu retains the keyboard shortcut with an explicit destination label, “Return to My clubhouse” or “Return to Cube Quest.” The wordmark and sidebar remain the primary navigation.
+
+All 62 existing Mac toolbar integration checks passed after updating their expectations for the removed item and explicit parent-menu labels. Verified the packaged app visually in the isolated QA copy at minimum width with Larger text: the arrow is absent and branding and actions retain their positions. The full unrelated model/camera suite was not rerun for this toolbar-only change. Production learner data was not opened or changed.
+
+Built and verified `Cube-Club-0.7.3-arm64.dmg`: embedded web resources match, signatures and exact app contents pass, and the read-only volume, Applications link, installer artwork and Finder layout are intact. SHA-256: `20aa02aa1827ebf4c2d578fece524d8e2f860697f6817b4da63535a7561ab769`.

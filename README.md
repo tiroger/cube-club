@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.7.2-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.7.3-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -74,10 +74,10 @@ Settings and progress stay on this Mac. This release uses one learner profile; i
 
 ## Mac navigation
 
-The packaged app puts the Cube Club wordmark beside the Mac window controls in a native AppKit toolbar. The toolbar and original clubhouse sidebar share a continuous light/dark background. The current page or lesson appears beneath the wordmark; click the wordmark to return home. Rounded type, green navigation highlights, the learner profile, and footer keep the teaching screens’ design. The duplicate sidebar wordmark and web top header are hidden only in the Mac app. The camera button opens cube review; it does not turn on the camera automatically. The speaker button controls read-aloud, and the gear opens settings. The extra website-style top header stays hidden in the Mac app.
+The packaged app puts the Cube Club wordmark beside the Mac window controls in a native AppKit toolbar. The toolbar and original clubhouse sidebar share a continuous light/dark background. The current page or lesson appears beneath the wordmark; click the wordmark to return home. Rounded type, green navigation highlights, the learner profile, and footer keep the teaching screens’ design. The duplicate sidebar wordmark and web top header are hidden only in the Mac app. The camera button opens cube review; it does not turn on the camera automatically. The speaker button controls read-aloud, and the gear opens settings. Navigate with the sidebar or click the wordmark to return home; the toolbar has no history arrow.
 
 - **⌃⌘S:** show or hide the sidebar.
-- **⌘[**: return to the learning path from a lesson, or to the clubhouse from a main section.
+- **⌘[**: use the Go menu’s explicitly named return command to reach Cube Quest from a lesson, or My clubhouse from a main section. This is a parent-page shortcut, not navigation history.
 - **⌘1–8:** open the destinations listed in the **Go** menu.
 - **⌘,:** open Settings.
 - **⌃⌘F:** enter or exit full screen.

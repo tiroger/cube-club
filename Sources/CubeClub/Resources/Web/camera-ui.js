@@ -1,5 +1,5 @@
 /* One shared on-device camera experience for scanning and move checks. */
-let cameraPalette={}; // Lighting calibration lasts only until this app closes.
+let cameraPalette={}; // Restored from the learner’s saved color samples at startup.
 function cameraState(){
   if(!scan)return null;
   if(!scan.cameraCaptured)scan.cameraCaptured=new Set();
@@ -15,7 +15,7 @@ function cameraPanel(){
   <div class="vision-progress" aria-hidden="true"><span id="vision-progress"></span></div>
   <div class="camera-controls"><button class="button secondary" data-action="captureFace" disabled>${icon('camera')}${v.captured.has(face)?'Read face again':'Read this face'}</button>${scan.camera?'<button class="button secondary" data-action="stopCamera">Turn camera off</button>':''}${scan.mode!=='check'?'<button class="text-button" data-action="demoScan">Try a sample cube</button>':''}</div>
   <label class="auto-capture"><input type="checkbox" data-camera-auto ${scan.autoCapture!==false?'checked':''}> Read automatically when steady <span>Always pauses for your review</span></label>
-  <details class="color-teaching" id="color-teaching" ${scan.calibrating?'open':''}><summary>Match my cube’s colors <span>${learned}/6 learned</span></summary><p>Optional: teach all six centers in this room’s light. Choose a face tab above, show that center, and hold still. Automatic capture pauses here.</p><div class="learned-colors" aria-label="Learned center colors">${FACES.map(f=>`<span style="--sticker:${COLORS[f]}" aria-label="${COLOR_NAMES[f]} ${cameraPalette[f]?'learned':'waiting'}">${cameraPalette[f]?'✓':'·'}</span>`).join('')}</div><button class="button secondary" data-action="teachCenter" disabled>Teach ${COLOR_NAMES[face]} from the center</button><button class="text-button" data-action="resetCameraColors" ${learned?'':'disabled'}>Reset learned colors</button><p class="small-note">${CubeClubVision.profileReady(cameraPalette)?'Your six colors are active. Close this panel to capture.':'All six are needed to use your color match.'} Re-teach if the lighting changes. ${learned?'Colors stay in memory until you quit.':''}</p></details>`;
+  <details class="color-teaching" id="color-teaching" ${scan.calibrating?'open':''}><summary>Match my cube’s colors <span>${learned}/6 learned</span></summary><p>Optional: teach all six centers in this room’s light. Choose a face tab above, show that center, and hold still. Automatic capture pauses here.</p><div class="learned-colors" aria-label="Learned center colors">${FACES.map(f=>`<span style="--sticker:${COLORS[f]}" aria-label="${COLOR_NAMES[f]} ${cameraPalette[f]?'learned':'waiting'}">${cameraPalette[f]?'✓':'·'}</span>`).join('')}</div><button class="button secondary" data-action="teachCenter" disabled>Teach ${COLOR_NAMES[face]} from the center</button><button class="text-button" data-action="resetCameraColors" ${learned?'':'disabled'}>Reset learned colors</button><p class="small-note">${CubeClubVision.profileReady(cameraPalette)?'Your six colors are active. Close this panel to capture.':'All six are needed to use your color match.'} Re-teach if the lighting changes. ${learned?'Learned colors are saved on this Mac, including after you quit. Re-teach if you change the camera or cube.':''}</p></details>`;
 }
 function visionCopy(result){
   switch(result?.status){
@@ -124,11 +124,14 @@ function stopCubeCamera(){
   scan.camera=false;scan.cameraToken=null;scan.vision=null;lastFrame=null;lastFrameTime=0;
   if(native)bridge('cameraStop');renderScan();
 }
-function teachCameraCenter(){
+async function teachCameraCenter(){
   const v=cameraState();if(!scan?.camera||scan.solving||!v?.result?.geometryReady||Date.now()-v.resultTime>1800)return;
   const result=CubeClubVision.teachColor(cameraPalette,v.face,v.result.center);
   if(result.error){$('#scan-error').textContent=result.error;return;}
-  cameraPalette=result.profile;v.tracker.reset();v.result=null;
+  const owner=scan;v.tracker.reset();v.result=null;
+  if(!await persistCameraPalette(result.profile))return;
+  if(scan!==owner)return;
+  v.tracker.reset();v.result=null;
   renderScan();$('#scan-error').textContent=`Learned your ${COLOR_NAMES[v.face]}. ${CubeClubVision.profileReady(cameraPalette)?'All six colors are ready. Close the color panel to capture.':'Choose another face tab to teach the next center.'}`;
 }
 document.addEventListener('change',e=>{if(e.target.matches('[data-camera-auto]')&&scan){scan.autoCapture=e.target.checked;progress.preferences.autoCapture=scan.autoCapture;save();updateCameraFeedback();}});

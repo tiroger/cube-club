@@ -6,7 +6,7 @@ function scanOrientationGuide(face){
 }
 function teachingCheckpoint(){return session?.teaching?.stages.find(s=>!s.skipped&&s.end===session.index&&!session.checkpoints.has(s.id));}
 function teachingChunk(){return session.teaching.chunks.find(c=>session.index>=c.start&&session.index<c.end)||session.teaching.chunks.at(-1);}
-function teachingPage(){return `<div class="lesson-top"><button class="back-link" data-nav="home">${icon('arrow')}Back to clubhouse</button><span class="eyebrow">MY CUBE · BEGINNER TEACHING GUIDE</span></div><div id="teaching-path"></div><div class="lesson-layout teaching-layout">${stage()}<div class="lesson-copy"><div id="teaching-copy"></div></div></div>`;}
+function teachingPage(){return `<div class="lesson-top"><button class="back-link" data-nav="home">${icon('arrow')}Back to clubhouse</button><span class="eyebrow">MY CUBE · BEGINNER TEACHING GUIDE</span></div>${pauseControl()}<div id="teaching-path"></div><div class="lesson-layout teaching-layout">${stage()}<div class="lesson-copy"><div id="teaching-copy"></div></div></div>`;}
 function updateTeaching(){
  const compareOpen=$('#teaching-copy .piece-map')?.open;
  const {teaching,index,algorithm}=session,checkpoint=teachingCheckpoint(),done=index===algorithm.length,chunk=teachingChunk(),stage=checkpoint||teaching.stages.find(s=>s.id===chunk?.stage)||teaching.stages.at(-1);
@@ -23,12 +23,12 @@ async function teachingClick(d){
  if(d.solveMethod&&scan?.mode!=='check'&&scan&&!scan.solving){scan.method=d.solveMethod==='general'?'general':'beginner';renderScan();return true;}
  if(!session?.teaching)return false;
  if(d.action==='confirmTeachingStage'){
-  const s=teachingCheckpoint();if(s&&!busy){session.checkpoints.add(s.id);updateSequence();autoSpeak('Milestone checked. Take your time with the next little step.');}return true;
+  const s=teachingCheckpoint();if(s&&!busy){session.checkpoints.add(s.id);updateSequence();rememberSession();autoSpeak('Milestone checked. Take your time with the next little step.');}return true;
  }
  if(d.action==='readTeaching'){const stage=teachingCheckpoint(),chunk=teachingChunk();speak(stage?'Pause and check. '+stage.goal:session.index===session.algorithm.length?'Check all six faces of your real cube.':chunk.title+'. '+describeMove(session.algorithm[session.index])+' '+chunk.why);return true;}
  if(d.action==='finishTeaching'){
   if(session.index!==session.algorithm.length||teachingCheckpoint()||session.credited)return true;
-  session.credited=true;progress.solves++;save();updateSequence();
+  session.credited=true;progress.solves++;rememberSession(true);updateSequence();
   showModal(`<div class="completion"><div class="big-star">✦</div><h2>You brought your cube home!</h2><p>You built a daisy, matched the layers, and gave every piece a home. Your next adventure is learning those patterns with less help.</p><button class="button primary" data-action="learnAfterSolve">Visit my learning path</button><button class="button secondary" data-action="closeModal">Look at my finished cube</button></div>`,'small-modal','Guided solve celebration');return true;
  }
  return false;

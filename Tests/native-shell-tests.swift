@@ -20,6 +20,11 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     let menu = NSMenu()
     private lazy var solver = CubeSolver(root: root.appendingPathComponent("Sources/CubeClub/Resources/Web"))
     var saved = "{}"
+    var recovery = ""
+    var importReply: [String: Any] = ["cancelled": true]
+    var failRestore = false
+    var launch = 0
+    var accumulatedChecks = 0
     var started = false
     let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -54,6 +59,18 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         switch action {
         case "solve":
             solver.solve(facelets: body["facelets"] as! String, method: body["method"] as? String ?? "general") { self.reply(id, $0) }
+        case "continuityTestInput":
+            importReply = body["reply"] as? [String: Any] ?? ["cancelled": true]
+            failRestore = body["failRestore"] as? Bool ?? false
+            reply(id,["ok": true])
+        case "exportBackup":
+            do { _ = try BackupFiles.data(body["value"] as! String); reply(id,["ok": true]) }
+            catch { reply(id,["error": error.localizedDescription]) }
+        case "importBackup": reply(id,importReply)
+        case "loadRecovery": reply(id,["value": recovery])
+        case "restoreProgress":
+            if failRestore { reply(id,["error": "Test restore failure"]) }
+            else { recovery = saved; saved = body["value"] as! String; reply(id,["ok": true]) }
         case "loadProgress": reply(id,["value": saved])
         case "saveProgress": saved = body["value"] as! String; reply(id,["ok": true])
         case "appearance":
@@ -83,10 +100,13 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         guard !started else { return }; started = true
         do {
             let script = try String(contentsOf: root.appendingPathComponent(CommandLine.arguments.dropFirst().first ?? "Tests/native-shell-tests.js"),encoding: .utf8)
-            web.callAsyncJavaScript(script,arguments: [:],in: nil,in: .page) { result in
+            web.callAsyncJavaScript(script,arguments: ["testLaunch": launch, "previousChecks": accumulatedChecks],in: nil,in: .page) { result in
                 switch result {
                 case .failure(let error): self.fail("\(error.localizedDescription) \((error as NSError).userInfo)")
-                case .success(let value): print(value); exit(0)
+                case .success(let value):
+                    if let result = value as? [String: Any], result["reload"] as? Bool == true, self.launch < 2 {
+                        self.accumulatedChecks = result["checks"] as? Int ?? 0; self.launch += 1; self.started = false; self.web.reload()
+                    } else { print(value); exit(0) }
                 }
             }
         } catch { fail(error.localizedDescription) }

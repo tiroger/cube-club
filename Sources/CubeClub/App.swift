@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private var shell: ClubShell!
     private let camera = CubeCamera()
     private let speech = AVSpeechSynthesizer()
+    private let storage = ClubStorage()
     private lazy var solver = CubeSolver(root: webRoot)
     private var webRoot: URL { Bundle.module.url(forResource: "Web", withExtension: nil)! }
 
@@ -114,13 +115,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             guard ["system", "light", "dark"].contains(mode) else { reply(id, ["error": "Unknown appearance."]); return }
             applyAppearance(mode)
             reply(id, ["ok": true])
-        case "loadProgress": reply(id, ["value": UserDefaults.standard.string(forKey: "progress.v1") ?? "{}"])
-        case "saveProgress":
-            guard let value = body["value"] as? String, value.utf8.count < 32000,
-                  let data = value.data(using: .utf8), (try? JSONSerialization.jsonObject(with: data)) is [String: Any] else {
+        case "exportBackup":
+            guard let value = body["value"] as? String else { reply(id, ["error": "The backup could not be read."]); return }
+            BackupFiles.export(value, window: window) { [weak self] in self?.reply(id, $0) }
+        case "importBackup":
+            BackupFiles.open(window: window) { [weak self] in self?.reply(id, $0) }
+        case "loadRecovery": reply(id, ["value": storage.recovery ?? ""])
+        case "loadProgress": reply(id, ["value": storage.progress])
+        case "saveProgress", "restoreProgress":
+            guard let value = body["value"] as? String,
+                  storage.save(value, restoring: action == "restoreProgress") else {
                 reply(id, ["error": "Progress could not be saved."]); return
             }
-            UserDefaults.standard.set(value, forKey: "progress.v1")
             reply(id, ["ok": true])
         default: reply(id, ["error": "Unknown action."])
         }

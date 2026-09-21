@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.8.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.9.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -68,9 +68,19 @@ Open **Settings & grown-up corner** in the sidebar, the toolbar’s gear button,
 - **Learning & camera:** choose read-aloud instructions, slower animated turns, center face letters, and automatic capture when a face is steady. Changing auto-capture inside a scan also saves the choice for the next scan or move check. The camera still starts only when requested and every capture needs review.
 - **Progress:** manage parent confirmations and starting-stage overrides. **Clear times…** removes timer history while preserving lesson progress and timer access. **Restore lesson locks** removes parent overrides while preserving earned mastery and graduations.
 
-To start over, open **Progress → Reset all progress…**. Review the explanation, check the acknowledgement, and confirm. This clears all learning milestones, discoveries, practice records, solve counts, parent overrides, and times; it returns the learning path to the first beginner lesson and locks the optional timer. Appearance, accessibility, voice, pacing, labels, and camera preferences remain saved. Cancel leaves everything unchanged. Reset cannot be undone; there is no automatic reset during an update.
+To start over, open **Progress → Reset all progress…**. Review the explanation, check the acknowledgement, and confirm. This clears all learning milestones, discoveries, practice records, solve counts, parent overrides, times, and saved lesson/solve sessions; it returns the learning path to the first beginner lesson and locks the optional timer. Appearance, accessibility, voice, pacing, labels, camera preferences, and learned camera colors remain saved. Cancel leaves everything unchanged. Save a backup before resetting if you want to bring this journey back later. There is no automatic reset during an update.
 
-Settings and progress stay on this Mac. This release uses one learner profile; it does not sync progress or provide backup export/import.
+Settings and progress stay on this Mac. This release uses one learner profile with manual backup export/import; it does not sync automatically between Macs.
+
+## Pause, resume, and backups
+
+Lessons and guided solves save after each completed turn. Choose **Save & take a break**, or quit and come back later. The clubhouse shows separate **Continue** cards for your last lesson and your last cube solve; a lesson never displaces a physical-cube solve. Starting another lesson replaces the saved lesson, and a newly verified solve replaces the saved solve. Camera scans in progress, playground turns, recognition rounds, and running timers are not resumable sessions.
+
+Continuing shows six face diagrams, including the top-edge color for each view. Hold yellow up and green in front, compare your physical cube, and choose **My cube matches · continue**. If the cube changed during the break, choose **My cube changed · scan again**. Resuming never starts the camera or plays moves automatically. Teaching-stage confirmations and completed-turn positions are retained; undoing a stage requires its review again. Independent lesson checks deliberately restart at move one after a break. Learned and practiced milestones remain saved; resume itself awards no mastery.
+
+In **Settings → Progress**, choose **Save a backup…** to create a JSON file using the Mac’s Save dialog. It contains progress, settings, the two saved sessions, and learned RGB color samples; it contains no camera pictures. Put a copy somewhere safe before reinstalling or moving Macs.
+
+Choose **Restore a backup…**, select the file, review its summary, and acknowledge replacement. Unsupported formats, oversized files, invalid cube states, and malformed data leave the current journey unchanged. Restoring replaces the local profile; it does not merge two profiles. The previous saved journey is retained on this Mac. **Recover the journey from before the last restore…** lets you review and restore that copy, including after restarting the app. Keep a separate backup for protection if the Mac or its app data is lost. Re-teach camera colors when the new camera or lighting differs.
 
 ## Mac navigation
 
@@ -101,7 +111,7 @@ Existing `completed`, quiz, recognition, playground and guided-solve records sur
 
 **Clever Solutions** adds efficient pair insertion and T/Y PLL workshops. **Smooth Moves** introduces inspection, comfortable turning and lookahead, including a verified two-pair example. The real-cube milestone evaluates a thoughtful practice session, never a required time. The optional **My solve timer** can open earlier, as soon as a grown-up confirms the first independent solve. Timing is self-confirmed; the camera does not judge it. Leaving a running timer stops it for review without saving an unconfirmed result.
 
-The beginner teaching planner handles a full scanned state through daisy → matched white cross → white corners → middle edges → yellow cross → corner homes → corner orientation → final edges. It skips work already complete, lifts trapped pieces, and verifies every milestone and the full solution. Its deliberate beginner patterns can use substantially more moves than the general solver. Standalone lessons are prepared examples; read their setup instructions before applying a sequence to a physical cube. The intermediate/advanced material remains an introductory selection, not an exhaustive F2L or two-look/full PLL/OLL library. Graduations rely on the parent’s observed physical skills as well as in-app checks. An unfinished guided solve is not saved across app launches.
+The beginner teaching planner handles a full scanned state through daisy → matched white cross → white corners → middle edges → yellow cross → corner homes → corner orientation → final edges. It skips work already complete, lifts trapped pieces, and verifies every milestone and the full solution. Its deliberate beginner patterns can use substantially more moves than the general solver. Standalone lessons are prepared examples; read their setup instructions before applying a sequence to a physical cube. The intermediate/advanced material remains an introductory selection, not an exhaustive F2L or two-look/full PLL/OLL library. Graduations rely on the parent’s observed physical skills as well as in-app checks. Unfinished lessons and guided solves keep separate saved places across launches; see Pause, resume, and backups below.
 
 ## Scan a real cube
 
@@ -115,7 +125,7 @@ Use a standard 3×3 color arrangement: **yellow on top, green in front, orange o
 6. Hold yellow up and green toward you. In teaching mode, make the shown turn on your real cube, then choose **I made this turn**. Complete each short sequence. At a milestone, compare the described pieces and optionally use the camera check, then choose **This matches my cube**. Clockwise always means looking straight at the face being turned.
 7. During corner orientation, finish every four-move group and every indicated top turn: the lower layers recover at the end. At completion, check all six faces before celebrating. This records guided practice; it does not unlock lesson mastery, graduation, or the independent-solve timer.
 
-For difficult colors, open **Match my cube’s colors**. Automatic capture pauses. Choose each face tab, show the matching center, hold still, and select **Teach [color] from the center**. All six learned colors are needed to enable the calibrated classifier. Close the panel to resume captures. Calibration stays in memory until the app quits; reset and re-teach after changing cubes or lighting.
+For difficult colors, open **Match my cube’s colors**. Automatic capture pauses. Choose each face tab, show the matching center, hold still, and select **Teach [color] from the center**. All six learned colors are needed to enable the calibrated classifier. Close the panel to resume captures. Each learned color is saved on this Mac and restored after quitting. Partial calibration is kept too, so you can finish teaching later. Re-teach after changing cubes, cameras, or lighting; use Reset learned colors in the scanner or Settings → Learning & camera → Forget learned colors.
 
 Apple Vision detects rectangles, and a geometric detector checks the internal 3×3 seams or fits a lattice of sticker rectangles. Core Image straightens the detected face before sampling. The app requires a stable outline and agreement across recent frames; dark, uneven, glared, or ambiguous colors block capture. Plain rectangles and heavily covered faces are rejected in the generated-image tests. This is classical computer vision, with no custom trained cube model. Strong tilt, tiny cubes, reflective finishes, busy backgrounds, and unfamiliar lighting can still defeat it. Manual entry is always available, and real-world accuracy has not yet been measured across physical cubes.
 
@@ -193,7 +203,7 @@ Tests/                                    Model, rendering-geometry, and solver 
 docs/                                     Design direction, next features, verification notes
 ```
 
-Native AVFoundation camera access never requests microphone access. AVSpeechSynthesizer reads the instructions. UserDefaults stores lesson progress and preferences. A serial JavaScriptCore queue runs the solver away from the UI. The teaching interface is local HTML/CSS/Canvas in WKWebView; it makes no network requests. Navigation is restricted to bundled files and native bridge messages to the main bundled frame.
+Native AVFoundation camera access never requests microphone access. AVSpeechSynthesizer reads the instructions. UserDefaults stores lesson progress, preferences, saved sessions, calibration samples, and the most recent pre-restore recovery copy. Native Save/Open panels export and import bounded JSON backup files. A serial JavaScriptCore queue runs the solver away from the UI. The teaching interface is local HTML/CSS/Canvas in WKWebView; it makes no network requests. Navigation is restricted to bundled files and native bridge messages to the main bundled frame.
 
 For layout work only, serve the `Web` folder with a local server. Browser preview supports the learning interface, local progress, and a worker-based solver. Camera scanning is implemented in the native Mac app.
 

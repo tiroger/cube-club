@@ -16,7 +16,12 @@ swiftc -parse-as-library Tests/quest-ui-tests.swift -o "$VISION_TEST_BIN/quest-u
 
 "$VISION_TEST_BIN/quest-ui-tests" Tests/settings-ui-tests.js
 
-swiftc -parse-as-library Sources/CubeClub/NativeShell.swift Sources/CubeClub/CubeSolver.swift Tests/native-shell-tests.swift -o "$VISION_TEST_BIN/native-shell-tests"
+swiftc -parse-as-library Sources/CubeClub/NativeShell.swift Sources/CubeClub/CubeSolver.swift Sources/CubeClub/BackupFiles.swift Tests/native-shell-tests.swift -o "$VISION_TEST_BIN/native-shell-tests"
 "$VISION_TEST_BIN/native-shell-tests"
 
 "$VISION_TEST_BIN/native-shell-tests" Tests/teaching-ui-tests.js
+
+"$VISION_TEST_BIN/native-shell-tests" Tests/continuity-ui-tests.js
+
+swiftc -parse-as-library Sources/CubeClub/BackupFiles.swift Sources/CubeClub/ClubStorage.swift Tests/backup-files-tests.swift -o "$VISION_TEST_BIN/backup-files-tests"
+"$VISION_TEST_BIN/backup-files-tests"

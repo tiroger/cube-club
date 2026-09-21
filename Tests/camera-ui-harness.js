@@ -15,3 +15,5 @@ function $(selector){
 }
 function renderScan(){refreshCameraPanel();}
 function icon(){return '';}
+
+function persistCameraPalette(colors){cameraPalette=colors;return true;}

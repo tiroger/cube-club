@@ -12,6 +12,7 @@ function syncNativeChrome(force=false){
  lastChromeState=serialized;bridge('chromeState',state);
 }
 window.nativeCommand=action=>{
+ if(continuityWorking)return;
  // Native controls cannot bypass a review, reset acknowledgement, or lesson gate.
  if(!$('#overlay').hidden){syncNativeChrome(true);return;}
  if(busy){toast('Let this turn finish, then choose your next adventure.');syncNativeChrome(true);return;}

@@ -38,7 +38,7 @@ final class QuestUIRunner: NSObject, NSApplicationDelegate, WKNavigationDelegate
             let script = try String(contentsOf: root.appendingPathComponent(CommandLine.arguments.dropFirst().first ?? "Tests/quest-ui-tests.js"),encoding: .utf8)
             web.callAsyncJavaScript(script,arguments: [:],in: nil,in: .page) { result in
                 switch result {
-                case .failure(let error): self.fail(error.localizedDescription)
+                case .failure(let error): self.fail("\(error.localizedDescription) \((error as NSError).userInfo)")
                 case .success(let value): print(value); exit(0)
                 }
             }

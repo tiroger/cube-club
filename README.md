@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.7.3-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.8.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -37,16 +37,16 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 
 - **A cohesive clubhouse with a Mac title bar:** Cube Club branding beside the Mac window controls, a toolbar that shares the sidebar’s colors, rounded type, and illustrations. Hide the sidebar for more room or use Mac keyboard shortcuts.
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
-- **Cube Quest — four stages and 23 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
-- **First solve — nine short missions:** cube notation, daisy-to-cross, right- and left-hand patterns, middle edge insertion, yellow cross, Sune, corner cycling, and a final edge cycle.
+- **Cube Quest — four stages and 27 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
+- **First solve — 13 short missions:** cube notation, making a daisy, matching the white cross, right/left patterns, white-corner insertion, both middle-edge insertions, yellow cross, corner homes, finishing corner orientation, Sune as an alternative pattern, and the final edge cycle. New lessons explain trapped-piece recovery and why the lower layers temporarily look mixed during corner orientation.
 - **Next steps — six more missions:** direct white-cross insertion, alignment and restoration; ready F2L pairs on the right and left; and an introductory pair-building case. Follow the actual corner/edge stickers through each turn, with per-move explanations and six-face diagrams.
 - **Pattern practice:** eight cross/F2L recognition cases, gentle hints, links to the matching animated lesson, and three-case reviews that prioritize mistakes before new and less-practiced cases.
 - **An actual cube model:** drag to orbit; turn any face; watch the layer rotate; undo; scramble; return to a fresh cube. The animation geometry is tested against the solver’s permutation model for all 18 moves.
 - **Learn, practice, explain, check:** guided completion records exploration; memory practice permits hints; a correct concept answer records understanding; a fresh independent move sequence earns mastery. Wrong turns, hints, reading the next instruction, or stepping backward require a fresh independent check. Old exploration and badges remain saved.
 - **Eight new workshops:** last-layer orientation versus permutation, Anti-Sune, efficient ready-pair insertion, T and Y PLL examples, inspection, comfortable finger practice, and a two-pair lookahead drill.
 - **Optional solve timer:** opens after a parent confirms an independent real-cube solve. Start/stop buttons and Space control timing; only a confirmed solved cube saves a time. Retains the last 50 local times with personal best, arithmetic mean of the last five, and a next-practice focus. No time threshold controls progression.
-- **Solve my cube:** six-face camera capture, suggested colors, manual painting and rotation, full physical-state validation, and a verified move-by-move solution.
-- **Cube vision:** a live outline follows detected 3×3 faces. Tilt is corrected before sampling, several frames must agree, and capture pauses for review. Optional six-center color teaching adapts the classifier to the current cube and room lighting.
+- **Solve my cube:** six-face camera capture, suggested colors, manual painting and rotation, and full physical-state validation. Choose **Teach me to solve** (the default) for a beginner layer-by-layer plan, or **Just show the moves** for the original general solution. Teaching shows a short sequence, moving-piece highlights, a reason for the pattern, eight milestone markers, six-face diagrams, and deliberate pauses to compare the real cube. Existing finished layers are respected; guided solves do not award independent mastery.
+- **Cube vision:** animated center-only cube illustrations show each requested face and its top-edge orientation. Reduced motion shows the final grip. A live outline follows detected 3×3 faces. Tilt is corrected before sampling, several frames must agree, and capture pauses for review. Optional six-center color teaching adapts the classifier to the current cube and room lighting.
 - **Check my move:** optional snapshot checks after a guided turn. Review one or more faces; the app distinguishes ambiguous views, partial matches, full six-face matches, and common single-turn mistakes. Conditional repair instructions help undo an identified mistake.
 - **Case detective:** seven visual challenges using real cube states, highlighted stickers, hints, accessible color descriptions, and explanations for yellow shapes, edge slots, and a corner’s home.
 - **Together time:** parent-and-child rounds with alternating caller/turner roles, a reveal/predict/turn/discuss flow, gentle wrong-move feedback, and shared discoveries.
@@ -58,7 +58,7 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 1. Open **Start my adventure** and use **Next move**. Watch four right turns restore the cube.
 2. Answer the question, choose **Practice from memory**, then complete **Check myself** to master the first lesson and unlock the next. A parent can adjust the starting stage in **Grown-up corner**.
 3. Open **Practice playground**. Make a turn and undo it. Drag the cube to see its hidden faces.
-4. Open **Solve my cube → Try a sample cube → Show me the steps** to exercise the complete solver without a camera.
+4. Open **Solve my cube → Try a sample cube → Teach me to solve** to exercise the complete solver without a camera.
 
 ## Make it yours
 
@@ -101,7 +101,7 @@ Existing `completed`, quiz, recognition, playground and guided-solve records sur
 
 **Clever Solutions** adds efficient pair insertion and T/Y PLL workshops. **Smooth Moves** introduces inspection, comfortable turning and lookahead, including a verified two-pair example. The real-cube milestone evaluates a thoughtful practice session, never a required time. The optional **My solve timer** can open earlier, as soon as a grown-up confirms the first independent solve. Timing is self-confirmed; the camera does not judge it. Leaving a running timer stops it for review without saving an unconfirmed result.
 
-These are prepared teaching examples, not an exhaustive beginner, F2L, two-look OLL/PLL, or full PLL/OLL case catalogue. The advanced stage begins the larger PLL toolkit with two cases; additional cases can grow within the progression. Read orientation and starting-sticker instructions before applying a sequence to a physical cube. The scanned-cube solver still returns a verified general solution, rather than a method-specific beginner or CFOP teaching solve. Graduations rely on the parent’s observed physical skills as well as in-app checks.
+The beginner teaching planner handles a full scanned state through daisy → matched white cross → white corners → middle edges → yellow cross → corner homes → corner orientation → final edges. It skips work already complete, lifts trapped pieces, and verifies every milestone and the full solution. Its deliberate beginner patterns can use substantially more moves than the general solver. Standalone lessons are prepared examples; read their setup instructions before applying a sequence to a physical cube. The intermediate/advanced material remains an introductory selection, not an exhaustive F2L or two-look/full PLL/OLL library. Graduations rely on the parent’s observed physical skills as well as in-app checks. An unfinished guided solve is not saved across app launches.
 
 ## Scan a real cube
 
@@ -111,8 +111,9 @@ Use a standard 3×3 color arrangement: **yellow on top, green in front, orange o
 2. Show one whole face in bright, even light, with all four corners visible and fingers off the stickers. A glowing outline follows the detected face. Moderate tilt is corrected automatically; the face does not need to sit in a fixed guide.
 3. For the four side faces, keep the yellow center at the top. For the yellow face, keep the blue center toward the top of the image. For the white face, keep the green center toward the top of the image.
 4. Hold still for about a second. Automatic capture suggests colors when six recent frames provide consistent evidence. Inspect every square, fix any suggestion with the palette, and choose **Colors look right**. You can turn automatic capture off and use **Read this face** instead. **Read face again** explicitly replaces a previous capture; ongoing video cannot overwrite manual corrections.
-5. Check all six faces and choose **Show me the steps**. The first solve builds lookup tables and can take several seconds.
-6. Hold yellow up and green toward you. Make the shown turn on your real cube, then advance the guide. Clockwise always means looking straight at the face being turned.
+5. Check all six faces. Choose **Teach me to solve** for beginner layers and explanations, or select **Just show the moves** and then **Show me the moves** for the general solution. The general solver’s first run builds lookup tables and can take several seconds.
+6. Hold yellow up and green toward you. In teaching mode, make the shown turn on your real cube, then choose **I made this turn**. Complete each short sequence. At a milestone, compare the described pieces and optionally use the camera check, then choose **This matches my cube**. Clockwise always means looking straight at the face being turned.
+7. During corner orientation, finish every four-move group and every indicated top turn: the lower layers recover at the end. At completion, check all six faces before celebrating. This records guided practice; it does not unlock lesson mastery, graduation, or the independent-solve timer.
 
 For difficult colors, open **Match my cube’s colors**. Automatic capture pauses. Choose each face tab, show the matching center, hold still, and select **Teach [color] from the center**. All six learned colors are needed to enable the calibrated classifier. Close the panel to resume captures. Calibration stays in memory until the app quits; reset and re-teach after changing cubes or lighting.
 
@@ -150,7 +151,9 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Basic color classification and stored-progress sanitization.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
 - Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
-- Twenty deterministic 25-move scrambles, each solved and verified end-to-end.
+- Twenty deterministic 25-move scrambles through the general solver; 120 more through the beginner planner, with exact chunk states and all eight milestone objectives checked.
+- All 27 legal top-corner twist patterns, all 24 top-corner permutations, and all 12 even final-edge permutations through the beginner planner.
+- The native teaching UI from a six-face sample through review pauses, undo/redo, optional camera checks, explicit final confirmation, cancellation and both solver modes. New daisy lessons use their actual learning goal rather than requiring a fully solved cube.
 - Every requested move against no turn and all 18 possible single turns, with exact-state repair verification.
 - Partial/ambiguous observations, unknown stickers, wrong centers, multi-turn divergence, and adaptive face selection.
 - Seven legal challenge cases, complete shared-round state transitions, uncertain camera patches, and migration of existing saved progress.
@@ -158,7 +161,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Color calibration, exposure variation, glare, temporal agreement, movement, interruptions, and wrong centers.
 - Next-step lesson preconditions, matching-pair geometry, highlighted-piece tracking after every move, restoration of the cross and finished slots, recognition-case setups, review priority, and saved-progress migration.
 - Cube Quest: legacy migration, stage and lesson prerequisites, assisted versus independent attempts, graduation reachability, parent grants, saved times, last-layer preconditions and two-pair drill geometry.
-- An isolated native WebKit test runs all 23 lessons and four graduations through the actual interface, including mistakes, retries, bypass prevention, physical-milestone confirmation, persistence, timer review/discard, and minimum-window layout.
+- An isolated native WebKit test runs all 27 lessons and four graduations through the actual interface, including mistakes, retries, bypass prevention, physical-milestone confirmation, persistence, timer review/discard, and minimum-window layout.
 - Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order preview/analysis packets, calibration, and pending-solve protection.
 - Independent preview/detection queues, bounded delivery until WebKit finishes decoding, stop/restart isolation, and preview throughput with deliberately slow analysis.
 
@@ -169,6 +172,7 @@ See [verification notes](docs/VERIFICATION.md) for the native UI checks and rema
 ```text
 Sources/CubeClub/App.swift                 AppKit window, camera, speech, persistence, solver bridge
 Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, bounded WebKit delivery
+Sources/CubeClub/CubeSolver.swift          Shared background JavaScriptCore service for both solve modes
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
   app.js                                  Lessons, practice, scanning and interaction state
@@ -196,6 +200,7 @@ For layout work only, serve the `Web` folder with a local server. Browser previe
 ## References and credits
 
 - Original illustration, visual design, curriculum wording, and app code created for this project.
+- [Rubik’s solution guides](https://www.rubiks.com/solution-guides) provided a reference for the beginner layer sequence; lesson wording and planner are original.
 - [CubeSkills F2L](https://www.cubeskills.com/tutorials/f2l) and [Optimising the Beginner’s Method](https://www.cubeskills.com/tutorials/optimising-the-beginners-method) informed the progression into direct cross planning and corner-edge pairs. The app’s explanations, diagrams, and practice cases are original; every taught setup is checked against the cube model.
 - [CubeSkills four-look last layer](https://www.cubeskills.com/tutorials/4-look-last-layer), [PLL algorithms](https://www.cubeskills.com/uploads/pdf/tutorials/pll-algorithms.pdf), and [lookahead progression](https://cubeskills.com/blog/lookahead-progression-framework) informed the additional topics. Explanations and generated cube diagrams are original; algorithms are checked against the local cubie model.
 - [Official Rubik’s solution guides](https://www.rubiks.com/solution-guides) informed the beginner stage structure. No branded images or tutorial text were copied.

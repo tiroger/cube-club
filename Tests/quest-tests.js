@@ -12,7 +12,7 @@
  ok(!Q.answerConcept(p,'hello',2),'wrong explanation does not pass');Q.answerConcept(p,'hello',0);ok(Q.state(p,'hello').understood,'correct explanation persists');
  Q.finishAttempt(p,'hello',attempt('hello','recall',true));ok(Q.state(p,'hello').practiced&&!Q.mastered(p,'hello'),'hinted practice counts without mastery');
  for(const bad of [{...attempt('hello','check'),assisted:true},{...attempt('hello','check'),complete:false},{...attempt('hello','check'),solved:false},{...attempt('hello','check'),turns:3},{...attempt('hello','check'),mode:'unknown'}])ok(!Q.finishAttempt(p,'hello',bad),'incomplete or assisted independent attempts rejected');
- Q.finishAttempt(p,'hello',attempt('hello','check'));ok(Q.mastered(p,'hello')&&Q.canOpen(p,'cross'),'clean independent attempt unlocks next lesson');
+ Q.finishAttempt(p,'hello',attempt('hello','check'));ok(Q.mastered(p,'hello')&&Q.canOpen(p,'daisy'),'clean independent attempt unlocks next lesson');
  ok(!Q.graduate(p,'beginner')&&!Q.finishChallenge(p,'beginner',[0,1,2]),'stage checks cannot skip missing mastery');
  for(const stage of Q.STAGES){
   ok(Q.unlocked(p,stage.id),'stage unlocked after preceding graduation');

@@ -18,6 +18,7 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     var web: WKWebView!
     var shell: ClubShell!
     let menu = NSMenu()
+    private lazy var solver = CubeSolver(root: root.appendingPathComponent("Sources/CubeClub/Resources/Web"))
     var saved = "{}"
     var started = false
     let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
@@ -51,6 +52,8 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         guard let body = message.body as? [String: Any], let action = body["action"] as? String else { return }
         let id = body["id"] as? Int ?? 0
         switch action {
+        case "solve":
+            solver.solve(facelets: body["facelets"] as! String, method: body["method"] as? String ?? "general") { self.reply(id, $0) }
         case "loadProgress": reply(id,["value": saved])
         case "saveProgress": saved = body["value"] as! String; reply(id,["ok": true])
         case "appearance":
@@ -79,10 +82,10 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     func webView(_ webView: WKWebView,didFinish navigation: WKNavigation!) {
         guard !started else { return }; started = true
         do {
-            let script = try String(contentsOf: root.appendingPathComponent("Tests/native-shell-tests.js"),encoding: .utf8)
+            let script = try String(contentsOf: root.appendingPathComponent(CommandLine.arguments.dropFirst().first ?? "Tests/native-shell-tests.js"),encoding: .utf8)
             web.callAsyncJavaScript(script,arguments: [:],in: nil,in: .page) { result in
                 switch result {
-                case .failure(let error): self.fail(error.localizedDescription)
+                case .failure(let error): self.fail("\(error.localizedDescription) \((error as NSError).userInfo)")
                 case .success(let value): print(value); exit(0)
                 }
             }

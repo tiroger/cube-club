@@ -22,8 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private var shell: ClubShell!
     private let camera = CubeCamera()
     private let speech = AVSpeechSynthesizer()
-    private let solverQueue = DispatchQueue(label: "club.cube.solver", qos: .userInitiated)
-    private var solver: JSContext?
+    private lazy var solver = CubeSolver(root: webRoot)
     private var webRoot: URL { Bundle.module.url(forResource: "Web", withExtension: nil)! }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -98,28 +97,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             guard let facelets = body["facelets"] as? String, facelets.count == 54 else {
                 reply(id, ["error": "Please scan all six faces first."]); return
             }
-            let root = webRoot
-            solverQueue.async { [weak self] in
-                guard let self = self else { return }
-                if self.solver == nil {
-                    let context = JSContext()!
-                    for name in ["vendor/cube.js", "vendor/solve.js", "core.js"] {
-                        guard let code = try? String(contentsOf: root.appendingPathComponent(name), encoding: .utf8) else {
-                            self.reply(id, ["error": "A solver file is missing. Please rebuild the app."]); return
-                        }
-                        context.evaluateScript(code)
-                    }
-                    self.solver = context
-                }
-                guard let context = self.solver else { return }
-                context.exception = nil
-                let result = context.objectForKeyedSubscript("solveCubeRequest")?.call(withArguments: [facelets])?.toDictionary() as? [String: Any]
-                if context.exception != nil {
-                    self.reply(id, ["error": "That cube could not be solved. Check the scanned colors and orientation."])
-                } else {
-                    self.reply(id, result ?? ["error": "Please try scanning again."])
-                }
-            }
+            let method = body["method"] as? String == "beginner" ? "beginner" : "general"
+            solver.solve(facelets: facelets, method: method) { [weak self] result in self?.reply(id, result) }
         case "cameraStart": camera.start(token: body["token"] as? String ?? "") { [weak self] result in self?.reply(id, result) }
         case "cameraStop": camera.stop(); reply(id, ["ok": true])
         case "speak":

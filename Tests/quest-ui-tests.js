@@ -22,7 +22,7 @@ await click('[data-turn="U"]');await runMoves('check');assert(!Quest.mastered(pr
 await click('[data-quest-mode="check"]');await click('[data-action="readStep"]');await runMoves('check');assert(!Quest.mastered(progress,'hello'),'Reading next instruction counts as assistance');
 await click('[data-quest-mode="check"]');await click('[data-turn="R"]');await click('[data-action="backMove"]');await runMoves('check');assert(!Quest.mastered(progress,'hello'),'Backtracking counts as assistance');
 await click('[data-quest-mode="check"]');await runMoves('check');assert(Quest.mastered(progress,'hello'),'Fresh independent attempt masters');
-await click('[data-action="questReturn"]');assert(Quest.canOpen(progress,'cross'),'Mastery unlocks second lesson');
+await click('[data-action="questReturn"]');assert(Quest.canOpen(progress,'daisy'),'Mastery unlocks second lesson');
 // Exercise all real screen transitions and all three lesson modes in every stage.
 for(const stageInfo of Quest.STAGES){
  for(const l of Quest.lessonsFor(stageInfo.id)){

@@ -44,9 +44,30 @@ struct CubeFaceReading {
 final class CubeVision {
     let context: CIContext
     private let side = 288
-    init(context: CIContext = CIContext()) { self.context = context }
+    private let detector: (CIImage) throws -> [CubeQuad]
+    private var sequence = VNSequenceRequestHandler()
+    private var tracking: VNTrackRectangleRequest?
+    private var lastTime = -Double.infinity
+    private var lastExtent = CGRect.zero
 
-    func analyze(_ image: CIImage) -> [String: Any] {
+    init(context: CIContext = CIContext(), detector: ((CIImage) throws -> [CubeQuad])? = nil) {
+        self.context = context
+        self.detector = detector ?? Self.detectRectangles
+    }
+
+    // Called on the serial analysis lane, including when the camera is restarted.
+    func reset() {
+        tracking = nil
+        sequence = VNSequenceRequestHandler()
+        lastTime = -Double.infinity
+        lastExtent = .zero
+    }
+
+    private static func quad(_ observation: VNRectangleObservation) -> CubeQuad {
+        CubeQuad(points: [observation.topLeft, observation.topRight, observation.bottomRight, observation.bottomLeft].map { CGPoint(x: $0.x, y: 1 - $0.y) })
+    }
+
+    private static func detectRectangles(_ image: CIImage) throws -> [CubeQuad] {
         let request = VNDetectRectanglesRequest()
         request.maximumObservations = 48
         request.minimumConfidence = 0.35
@@ -54,32 +75,104 @@ final class CubeVision {
         request.minimumAspectRatio = 0.45
         request.maximumAspectRatio = 1
         request.quadratureTolerance = 35
-        do {
-            try VNImageRequestHandler(ciImage: image, orientation: .up).perform([request])
-        } catch { return ["status": "unavailable"] }
-        let rectangles = (request.results ?? []).map { observation in
-            CubeQuad(points: [observation.topLeft, observation.topRight, observation.bottomRight, observation.bottomLeft].map { CGPoint(x: $0.x, y: 1 - $0.y) })
+        try VNImageRequestHandler(ciImage: image, orientation: .up).perform([request])
+        return (request.results ?? []).map(Self.quad)
+    }
+
+    private func startTracking(_ quad: CubeQuad, in image: CIImage) {
+        let p = quad.points.map { CGPoint(x: $0.x, y: 1 - $0.y) }
+        let observation: VNRectangleObservation
+        if #available(macOS 14, *) {
+            observation = VNRectangleObservation(requestRevision: VNDetectRectanglesRequestRevision1, topLeft: p[0], topRight: p[1], bottomRight: p[2], bottomLeft: p[3])
+        } else {
+            observation = VNRectangleObservation(requestRevision: VNDetectRectanglesRequestRevision1, topLeft: p[0], bottomLeft: p[3], bottomRight: p[2], topRight: p[1])
         }
-        // A sticker lattice also proposes the face when Vision sees individual
-        // stickers but cannot see a continuous outer border (e.g. stickerless cubes).
-        let candidates = Array(rectangles.filter(\.valid).sorted { $0.area > $1.area }.prefix(10)) + Self.latticeCandidates(rectangles)
+        sequence = VNSequenceRequestHandler()
+        let request = VNTrackRectangleRequest(rectangleObservation: observation)
+        request.trackingLevel = .accurate
+        // Prime with the frame that supplied the corners, not the following frame.
+        do {
+            try sequence.perform([request], on: image, orientation: .up)
+            if let result = request.results?.first as? VNRectangleObservation, result.confidence >= 0.5 {
+                request.inputObservation = result
+                tracking = request
+            } else { tracking = nil }
+        } catch { tracking = nil }
+    }
+
+    func analyze(_ image: CIImage) -> [String: Any] {
+        let now = ProcessInfo.processInfo.systemUptime
+        if now - lastTime > 1 || image.extent != lastExtent { reset() }
+        lastTime = now; lastExtent = image.extent
+        // A tracker proposes new corners only. Every frame must independently
+        // pass the same physical-grid and sample checks before it can be used.
+        if let tracking {
+            do {
+                try sequence.perform([tracking], on: image, orientation: .up)
+                if let observation = tracking.results?.first as? VNRectangleObservation, observation.confidence >= 0.5,
+                   let reading = read(image, quad: Self.quad(observation)) {
+                    tracking.inputObservation = observation
+                    return packet(reading, image: image, source: "tracking")
+                }
+            } catch { /* Reacquire from this frame below. */ }
+            self.tracking = nil
+        }
+        var detectorFailed = false
+        let rectangles: [CubeQuad]
+        do { rectangles = try detector(image) }
+        catch { rectangles = []; detectorFailed = true }
+        // Individual stickers also propose a face when its outer border is weak.
+        let candidates = Array(rectangles.filter(\.valid).sorted { $0.area > $1.area }.prefix(16)) + Self.latticeCandidates(rectangles)
         var best: CubeFaceReading?
         for quad in candidates {
-            guard quad.valid, let reading = read(image, quad: quad) else { continue }
+            guard let reading = read(image, quad: quad) else { continue }
             if best == nil || reading.gridScore > best!.gridScore { best = reading }
         }
-        if let best {
-            let p = best.quad.points, w = image.extent.width, h = image.extent.height
-            var shortest = CGFloat.greatestFiniteMagnitude
-            for i in 0..<4 {
-                let next = p[(i+1)%4]
-                let dx = (p[i].x-next.x)*w, dy = (p[i].y-next.y)*h
-                shortest = min(shortest, hypot(dx,dy))
+        var source = "detection"
+        if best == nil {
+            // The visible alignment guide supplies bounded hypotheses, never
+            // colors. Blank squares and incomplete grids still fail verification.
+            source = "guide"
+            for quad in Self.guideCandidates(size: image.extent.size) {
+                guard let reading = read(image, quad: quad), reading.gridScore >= 0.84 else { continue }
+                if best == nil || reading.gridScore > best!.gridScore { best = reading }
             }
-            if shortest < 105 { return ["status": "too-small", "corners": best.quad.json] }
-            return best.json
         }
-        return ["status": "searching"]
+        if let best {
+            let result = packet(best, image: image, source: source)
+            if result["status"] as? String == "found" { startTracking(best.quad, in: image) }
+            return result
+        }
+        return ["status": detectorFailed ? "unavailable" : "searching"]
+    }
+
+    private func packet(_ reading: CubeFaceReading, image: CIImage, source: String) -> [String: Any] {
+        let p = reading.quad.points, w = image.extent.width, h = image.extent.height
+        var shortest = CGFloat.greatestFiniteMagnitude
+        for i in 0..<4 {
+            let next = p[(i + 1) % 4]
+            let dx = (p[i].x - next.x) * w, dy = (p[i].y - next.y) * h
+            shortest = min(shortest, hypot(dx, dy))
+        }
+        if shortest < 105 { return ["status": "too-small", "corners": reading.quad.json] }
+        return reading.json.merging(["source": source]) { _, new in new }
+    }
+
+    // Same pixel-square geometry as the camera overlay, including wide cameras.
+    static func guideCandidates(size: CGSize) -> [CubeQuad] {
+        guard size.width > 0, size.height > 0 else { return [] }
+        let unit = min(size.width, size.height)
+        var result: [CubeQuad] = []
+        for scale: CGFloat in [1, 0.92, 1.08] {
+            for offsetY: CGFloat in [0, -0.045, 0.045] { for offsetX: CGFloat in [0, -0.045, 0.045] {
+                let side = unit * 0.62 * scale
+                let cx = size.width / 2 + unit * offsetX, cy = size.height / 2 + unit * offsetY
+                result.append(CubeQuad(points: [CGPoint(x: -0.5, y: -0.5), CGPoint(x: 0.5, y: -0.5), CGPoint(x: 0.5, y: 0.5), CGPoint(x: -0.5, y: 0.5)].map {
+                    CGPoint(x: (cx + $0.x * side) / size.width, y: (cy + $0.y * side) / size.height)
+                }))
+            }}
+        }
+        return result
     }
 
     func rectified(_ image: CIImage, quad: CubeQuad) -> CIImage? {

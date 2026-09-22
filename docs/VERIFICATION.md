@@ -188,3 +188,22 @@ Visually inspected the actual packaged app in the separate **Cube Club Native QA
 The 0.9.0 Apple silicon DMG retains the illustrated installation background. Packaging verified the read-only volume, exact application contents, local signatures, Applications shortcut, background and icon layout. The embedded Web resources match the tested source files. SHA-256: `5dd1af8e2e7d9289f48567972ac372c2958a742e24640a7af75801e91e99fa8f`.
 
 Scope: one local learner profile, one saved lesson and one saved solve, with manual backups rather than automatic sync. Unfinished six-face scans, playground/recognition rounds, and running timers do not resume. Camera calibration still needs re-teaching after changing cubes, cameras, or lighting. Physical-cube recognition accuracy and public-distribution signing limitations remain as documented above.
+
+
+## Version 0.9.1 — steadier cube-face recognition
+
+The reported failure was finding or keeping a cube face, rather than color calibration. Acquisition now keeps the existing rectangle/lattice detector and adds a visible, pixel-square alignment guide with bounded grid hypotheses when no outer rectangle is found. Apple Vision rectangle tracking carries verified corners between frames. Every tracked or guided frame independently verifies the physical 3×3 seams and samples current pixels; no earlier color reading is replayed. Tracking resets on camera session changes, image-size changes, and long frame gaps.
+
+Consensus allows gentle hand drift and one short detection miss without discarding the entire hold. Missing evidence still disables both capture and color teaching. Repeated loss, weak geometry, sudden movement, stale evidence, wrong centers, glare, and uncertain colors continue to block capture. All six accepted frames must fall within 1.6 seconds. Starting the camera scrolls its full preview above the sticky scanner footer at the minimum window size.
+
+Verification passed **29,531 checks** across the full suite and the additional camera-guide WebKit suite. Final camera UI edits were followed by another JavaScript/bridge run and the guide's native WebKit checks. New regression coverage includes:
+
+- Guide acquisition with outer-rectangle detection deliberately disabled, correct sticker orientation, fresh colors after a face changes, wide-camera geometry, blur tolerance, and rejection of blank surfaces, stripes, and occlusion.
+- A 12-frame generated hand-movement sequence: all 12 frames used tracking, averaging approximately 2 ms per analysis on the build Mac. This is a synthetic fixture measurement, not a physical-camera accuracy benchmark.
+- Single-miss recovery without accepting stale colors, repeated-loss reset, gentle drift, sudden movement, and camera-session tracking reset.
+- Actual canvas rendering in light/dark modes and larger text at 1024×720, complete preview visibility above the footer, unavailable controls during recovery, and required color review after capture. Both themes were visually inspected using isolated WebKit screenshots.
+- Preview under deliberately slow analysis: 30.0 fps and 6 ms p95 capture-to-draw latency in the generated-video benchmark. The preview remains independent of recognition.
+
+No physical camera was opened and no learner data was changed during testing. Reliability across real cubes, lighting, and cameras remains unmeasured; the user's setup still needs a trial. Recognition remains geometric computer vision, without a custom trained cube model or continuous move interpretation. The tracker verifies face location only.
+
+The Apple silicon 0.9.1 DMG (build 14) retains the illustrated installer. Packaging verified the read-only volume, exact app contents, local signatures, Applications shortcut, artwork, and icon layout. Packaged camera resources match tested source. SHA-256: `1ff6c8647be67a9c9442d92af88e8ffd02cc8ea7d0f145b91eaedc583b1e1409`.

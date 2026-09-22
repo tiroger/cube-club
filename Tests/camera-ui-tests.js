@@ -6,12 +6,12 @@
   const makeScan=()=>({index:0,faces:Object.fromEntries(FACES.map(f=>[f,Array.from({length:9},(_,i)=>i===4?f:'?')])),confirmed:new Set(),camera:true,cameraToken:'test',autoCapture:true});
   const reading=()=>({status:'found',gridScore:.95,corners:[[.2,.2],[.7,.2],[.7,.8],[.2,.8]],patches:[...'URFDFLBRU'].map(c=>({rgb:colors[c],spread:1,clipped:0}))});
   let sequence=0;
-  function frame(load=true,token='test'){
+  function frame(load=true,token='test',vision=reading()){
     clock+=210;
     const count=imageLoads.length;
     const packet={token,sequence:++sequence,capturedAt:clock};
     onCameraFrame({...packet,image:'data:image/jpeg;base64,fixture'});
-    if(load)onCameraAnalysis({...packet,vision:reading()});
+    if(load)onCameraAnalysis({...packet,vision});
     const image=imageLoads.length>count?imageLoads.at(-1):null;
     if(load&&image)image.onload();
     return image;
@@ -78,6 +78,19 @@
   assert(scan.vision.sequence===3,'Faster preview sequence never suppresses independent analysis');
   sequence=100;const failedImage=frame(false);failedImage.onerror();
   assert(lastFrameTime<clock,'Broken image does not become the latest preview');
+  scan=makeScan();sequence=0;lastFrameTime=0;
+  for(let i=0;i<5;i++)frame();
+  frame(true,'test',{status:'searching'});
+  assert(scan.faces.F.includes('?'),'A missed detection never auto-captures old colors');
+  updateCameraFeedback();
+  assert($('[data-action="captureFace"]').disabled&&$('[data-action="teachCenter"]').disabled,'Recovery disables capture and teaching');
+  captureFace();assert(scan.faces.F.includes('?'),'Explicit capture cannot bypass a detector miss');
+  frame();assert(!scan.faces.F.includes('?'),'A fresh verified frame can finish after a brief miss');
+  const guide=cameraGuide(720,405);
+  assert(Math.abs(guide.side-251.1)<.001&&guide.x===((720-guide.side)/2)&&guide.y===((405-guide.side)/2),'Wide camera alignment guide matches detector geometry');
+  const portrait=cameraGuide(405,720);
+  assert(portrait.side===guide.side&&portrait.x===guide.y&&portrait.y===guide.x,'Guide remains square for portrait input');
+  assert(cameraPanel().includes('Fit one whole face into the dashed square'),'Camera guide has accessible instructions');
   Date.now=originalNow;
   return `${checks} camera bridge checks passed: automatic capture, review locks, calibration, independent preview/detection, review locks, stream identity and stale evidence.`;
 })();

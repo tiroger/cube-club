@@ -46,17 +46,27 @@
   }
   class Consensus {
     constructor(){this.reset();}
-    reset(){this.frames=[];this.expected=null;this.lastTime=-Infinity;this.lastSequence=-1;this.anchor=null;}
+    reset(){this.frames=[];this.expected=null;this.lastTime=-Infinity;this.lastSequence=-1;this.anchor=null;this.lastValid=-Infinity;this.misses=0;}
     update(reading,{time,sequence,expected,profile={}}){
       if(!Number.isFinite(time)||!Number.isFinite(sequence)||sequence<=this.lastSequence)return {status:'stale',ready:false};
       if(expected!==this.expected||time-this.lastTime>750||time<this.lastTime){this.reset();this.expected=expected;}
       this.lastTime=time;this.lastSequence=sequence;
-      if(!validReading(reading)){this.frames=[];this.anchor=null;return {status:reading?.status==='too-small'?'too-small':reading?.status==='unavailable'?'unavailable':'searching',ready:false};}
-      if(this.anchor&&displacement(this.anchor,reading.corners)>.055){this.frames=[];this.anchor=null;}
-      if(!this.anchor)this.anchor=reading.corners;
+      if(!validReading(reading)){
+        this.misses++;
+        // One brief detector miss may keep past evidence, but is NEVER a usable
+        // reading. Repeated misses, weak grids and interruptions start over.
+        if(reading?.status==='searching'&&this.misses===1&&time-this.lastValid<=450&&this.frames.length)
+          return {status:'recovering',ready:false,progress:this.frames.length/6};
+        this.frames=[];this.anchor=null;
+        return {status:reading?.status==='too-small'?'too-small':reading?.status==='unavailable'?'unavailable':'searching',ready:false};
+      }
+      if(time-this.lastValid>750||(this.anchor&&displacement(this.anchor,reading.corners)>.10))this.frames=[];
+      // Compare adjacent verified faces so gentle hand drift is allowed. Sudden
+      // moves still restart the hold, and every sticker must agree over time.
+      this.anchor=reading.corners;this.lastValid=time;this.misses=0;
       const classified=reading.patches.map(p=>classify(p,profile));
       this.frames.push({time,classified,patches:reading.patches});
-      this.frames=this.frames.slice(-6);
+      this.frames=this.frames.filter(f=>time-f.time<=1600).slice(-6);
       const geometryReady=this.frames.length===6&&time-this.frames[0].time>=850;
       const center=reading.patches[4];
       const centerSteady=validRGB(center?.rgb)&&this.frames.every(f=>validRGB(f.patches[4]?.rgb)&&colorDistance(lab(f.patches[4].rgb),lab(center.rgb))<10);

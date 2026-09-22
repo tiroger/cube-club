@@ -10,7 +10,7 @@ function cameraState(){
 }
 function cameraPanel(){
   const v=cameraState(),face=scanOrder[scan.index],learned=Object.keys(cameraPalette).length;
-  return `<div class="camera-view vision-camera"><canvas id="camera-canvas" width="720" height="540" aria-label="Unmirrored camera preview. A glowing outline follows a detected cube face."></canvas><div class="camera-empty" id="camera-empty">${icon('camera')}<strong>Let’s find your cube</strong><button class="button primary" data-action="startCamera">${icon('camera')}Use my camera</button><p>Show one whole face in even light. Keep all four corners visible.</p></div><span class="vision-badge">${icon('search')}LET’S FIND YOUR CUBE</span></div>
+  return `<div class="camera-view vision-camera"><canvas id="camera-canvas" width="720" height="540" aria-label="Unmirrored camera preview. Fit one whole face into the dashed square. A solid outline follows a detected cube face."></canvas><div class="camera-empty" id="camera-empty">${icon('camera')}<strong>Let’s find your cube</strong><button class="button primary" data-action="startCamera">${icon('camera')}Use my camera</button><p>Fit one whole face inside the square. Face it toward the camera and keep fingers behind the edges.</p></div><span class="vision-badge" id="vision-badge">${icon('search')}FIT ONE FACE IN THE SQUARE</span></div>
   <div class="vision-feedback" id="vision-feedback" role="status"><span class="vision-dot"></span><div><strong id="vision-title">Ready when you are</strong><p id="vision-message">Your camera images stay on this Mac.</p></div></div>
   <div class="vision-progress" aria-hidden="true"><span id="vision-progress"></span></div>
   <div class="camera-controls"><button class="button secondary" data-action="captureFace" disabled>${icon('camera')}${v.captured.has(face)?'Read face again':'Read this face'}</button>${scan.camera?'<button class="button secondary" data-action="stopCamera">Turn camera off</button>':''}${scan.mode!=='check'?'<button class="text-button" data-action="demoScan">Try a sample cube</button>':''}</div>
@@ -21,11 +21,12 @@ function visionCopy(result){
   switch(result?.status){
   case 'ready':return ['A lovely clear view',scan?.autoCapture===false?'Ready! Choose “Read this face” to capture.':'Hold your cube still for its picture.'];
   case 'hold':return ['Found your cube. Hold still…','We’re checking a few pictures agree. Keep fingers off the stickers.'];
+  case 'recovering':return ['Still with you…','Hold the same face here. We’re checking the next clear picture.'];
   case 'wrong-center':return [`That looks like the ${COLOR_NAMES[result.seenCenter]} center`,`Show the ${COLOR_NAMES[scanOrder[scan.index]]} center. You can teach the colors below if this looks wrong.`];
   case 'uncertain':return ['A few colors need a clearer look',result.reason==='dark'?'Try a little more light.':result.reason==='glare'?'Tip the cube slightly to move the bright reflection.':'Keep fingers off the stickers and try even light. You can also teach your cube’s colors below.'];
   case 'too-small':return ['A little closer, please','Make the face bigger in the camera view. Keep all four corners visible.'];
   case 'unavailable':return ['Vision needs a restart','Try reconnecting the camera. You can still paint the colors by hand.'];
-  default:return ['Looking for nine squares','Show one whole face with all four corners visible. A small tilt is okay.'];
+  default:return ['Fit one face inside the square','Match the cube’s edges to the dashed square. Face it toward the camera, with fingers behind the edges.'];
   }
 }
 function updateCameraFeedback(){
@@ -35,6 +36,8 @@ function updateCameraFeedback(){
   let [title,message]=!scan.camera?['Ready when you are','Your camera images stay on this Mac.']:!fresh?['Waiting for a fresh picture','Reconnect the camera if the picture stays paused.']:visionCopy(evidenceFresh?v.result:null);
   if(fresh&&v.captured.has(v.face)&&!scan.calibrating){title='Take a look together.';message='Your color board is paused for review. Check all nine squares on the right, then confirm.';}
   if(fresh&&scan.calibrating){title=evidenceFresh&&v.result?.geometryReady?'Center ready to learn':'Show the center and hold still';message=`Make sure this is the ${COLOR_NAMES[v.face]} center, then choose “Teach ${COLOR_NAMES[v.face]} from the center.”`;}
+  const badge=$('#vision-badge');
+  if(badge)badge.textContent=fresh&&v.captured.has(v.face)&&!scan.calibrating?'CHECK YOUR COLORS':evidenceFresh&&v.result?.corners?'FACE FOUND':'FIT ONE FACE IN THE SQUARE';
   if($('#vision-title').textContent!==title)$('#vision-title').textContent=title;
   if($('#vision-message').textContent!==message)$('#vision-message').textContent=message;
   $('#vision-feedback').classList.toggle('ready',!!(evidenceFresh&&v.result?.ready));
@@ -85,11 +88,28 @@ window.onCameraAnalysis=packet=>{
 window.onCameraError=error=>{
   if(scan&&error?.token===scan.cameraToken){stopCubeCamera();$('#scan-error').textContent=error.message;}
 };
+// Keep this square in image pixels, not canvas pixels: wide cameras are
+// letterboxed and the detector's guide uses the shorter image dimension too.
+function cameraGuide(width,height){
+  const side=Math.min(width,height)*.62;
+  return {x:(width-side)/2,y:(height-side)/2,side};
+}
 function drawCamera(img){
   const canvas=$('#camera-canvas');if(!canvas)return;
   const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,scale=Math.min(w/img.width,h/img.height),iw=img.width*scale,ih=img.height*scale,ox=(w-iw)/2,oy=(h-ih)/2;
   ctx.fillStyle='#263e35';ctx.fillRect(0,0,w,h);ctx.drawImage(img,ox,oy,iw,ih);
   const state=cameraState(),result=state?.result,p=Date.now()-state?.resultTime<450?result?.corners:null;
+  if(!p){
+    const guide=cameraGuide(iw,ih),x=ox+guide.x,y=oy+guide.y,size=guide.side;
+    ctx.save();ctx.strokeStyle='rgba(239,255,232,.9)';ctx.lineWidth=3;ctx.setLineDash([10,7]);
+    ctx.strokeRect(x,y,size,size);ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(239,255,232,.35)';ctx.lineWidth=1;
+    for(let i=1;i<3;i++){
+      ctx.beginPath();ctx.moveTo(x+size*i/3,y);ctx.lineTo(x+size*i/3,y+size);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x,y+size*i/3);ctx.lineTo(x+size,y+size*i/3);ctx.stroke();
+    }
+    ctx.restore();
+  }
   if(p){
     const path=()=>{ctx.moveTo(ox+p[0][0]*iw,oy+p[0][1]*ih);p.slice(1).forEach(q=>ctx.lineTo(ox+q[0]*iw,oy+q[1]*ih));ctx.closePath();};
     ctx.beginPath();ctx.rect(0,0,w,h);path();ctx.fillStyle='rgba(17,40,31,.36)';ctx.fill('evenodd');
@@ -109,6 +129,10 @@ function captureFace(automatic=false){
   $('#scan-error').textContent=automatic?'Face captured automatically. Check every color and the top-edge orientation before confirming.':'Fresh colors captured. Check every square before confirming.';
 }
 function lockCameraFace(){const v=cameraState();if(v)v.captured.add(v.face);}
+function revealCamera(){
+  const modal=$('#overlay .modal'),camera=$('.vision-camera');
+  if(modal&&camera)modal.scrollTop+=camera.getBoundingClientRect().top-modal.getBoundingClientRect().top-16;
+}
 async function startCubeCamera(button){
   if(!scan)return;
   const owner=scan;button.disabled=true;button.textContent='Opening camera…';
@@ -117,7 +141,7 @@ async function startCubeCamera(button){
   const token=owner.cameraToken,result=await bridge('cameraStart',{token});
   if(scan!==owner||owner.cameraToken!==token)return;
   if(result.error){renderScan();$('#scan-error').textContent=result.error;}
-  else{owner.camera=true;renderScan();}
+  else{owner.camera=true;renderScan();revealCamera();}
 }
 function stopCubeCamera(){
   if(!scan)return;

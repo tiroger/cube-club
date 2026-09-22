@@ -23,5 +23,7 @@ swiftc -parse-as-library Sources/CubeClub/NativeShell.swift Sources/CubeClub/Cub
 
 "$VISION_TEST_BIN/native-shell-tests" Tests/continuity-ui-tests.js
 
+"$VISION_TEST_BIN/native-shell-tests" Tests/camera-guide-ui-tests.js
+
 swiftc -parse-as-library Sources/CubeClub/BackupFiles.swift Sources/CubeClub/ClubStorage.swift Tests/backup-files-tests.swift -o "$VISION_TEST_BIN/backup-files-tests"
 "$VISION_TEST_BIN/backup-files-tests"

@@ -44,6 +44,31 @@
   assert(!result.ready&&result.colors[0]==='?','Flickering colors do not capture');
   for(let i=0;i<6;i++)result=read();
   assert(result.ready,'Clear evidence recovers after flicker');
+  tracker.reset();
+  for(let i=0;i<5;i++)read();
+  result=read({status:'searching'});
+  assert(result.status==='recovering'&&!result.ready&&!result.geometryReady,'One brief miss preserves progress without permitting capture or calibration');
+  assert(read().ready,'Fresh verified face completes consensus after a single missed detection');
+  read({status:'searching'});result=read({status:'searching'});
+  assert(result.status==='searching'&&!read().ready,'Repeated losses need a fresh hold');
+  tracker.reset();
+  for(let i=0;i<6;i++){
+    const drifting=face();drifting.corners=drifting.corners.map(([x,y])=>[x+i*.009,y]);result=read(drifting);
+  }
+  assert(result.ready,'Gentle hand drift does not endlessly restart the hold');
+  const jumped=face();jumped.corners=jumped.corners.map(([x,y])=>[x+.17,y]);
+  assert(!read(jumped).ready,'A sudden large move still resets evidence');
+  tracker.reset();for(let i=0;i<6;i++)read();
+  read({status:'searching'});
+  const hiddenGlare=face();hiddenGlare.patches[0]={rgb:[255,255,255],spread:0,clipped:1};
+  result=read(hiddenGlare);
+  assert(!result.ready&&result.colors[0]==='?','Recovered geometry cannot conceal new glare with older colors');
+  read({status:'found',gridScore:.3});
+  assert(!read().ready,'Weak grid evidence clears consensus immediately');
+  tracker.reset();for(let i=0;i<5;i++)read();read({status:'searching'});
+  assert(!read(face(),'R').ready,'Changing requested face after a miss clears all evidence');
+  tracker.reset();for(let i=0;i<5;i++)read(face(),'F',400);
+  assert(!read(face(),'F',400).ready,'Widely spaced evidence cannot accumulate outside the freshness window');
   const before=JSON.stringify(face());read(face());assert(JSON.stringify(face())===before,'Evidence stays immutable');
   for(const bad of [{},null,{...face(),gridScore:.4},{...face(),corners:[[0,NaN]]},{...face(),patches:[]}])assert(!read(bad).ready,'Malformed/weak detections rejected');
   assert(read({status:'too-small'}).status==='too-small','Small cube guidance');

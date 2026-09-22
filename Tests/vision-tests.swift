@@ -75,6 +75,55 @@ struct VisionTests {
         }}
         check(!CubeVision.latticeCandidates(stickers).isEmpty,"nine sticker rectangles can recover the outer face")
         check(CubeVision.latticeCandidates(Array(stickers.prefix(5))).isEmpty,"incomplete sticker lattice rejected")
+        // Force missing outer-rectangle proposals: this is the actual failure
+        // mode the guide must recover, independent of Vision's fixture accuracy.
+        let guided = CubeVision(detector: { _ in [] })
+        let guide = CubeVision.guideCandidates(size: CGSize(width: 800, height: 600))[0]
+        let guideImage = fixture(bytes: data, quad: guide)
+        let guideResult = guided.analyze(guideImage)
+        check(guideResult["source"] as? String == "guide", "alignment guide recovers a cube when the rectangle detector finds nothing")
+        check(guideResult["status"] as? String == "found", "guide still verifies a real grid")
+        let guidePatches = guideResult["patches"] as! [[String:Any]]
+        for i in 0..<9 { for c in 0..<3 {
+            check(abs((guidePatches[i]["rgb"] as! [Double])[c]-Double(palette[colors[i]][c]))<15,"guided colors use current pixels in correct orientation")
+        }}
+        let wideGuide = CubeVision.guideCandidates(size: CGSize(width: 1280, height: 720))[0]
+        check(abs((wideGuide.points[1].x-wideGuide.points[0].x)*1280-446.4)<0.01,"wide-camera guide is the same pixel square as the preview")
+        check(abs((wideGuide.points[3].y-wideGuide.points[0].y)*720-446.4)<0.01,"guide is not stretched by the video aspect ratio")
+        var tracked = 0
+        let start = Date()
+        for step in 1...12 {
+            let moved = CubeQuad(points: guide.points.map { CGPoint(x:$0.x+CGFloat(step)*0.004,y:$0.y+sin(CGFloat(step))*0.004) })
+            let result = guided.analyze(fixture(bytes:data,quad:moved))
+            check(result["status"] as? String == "found","track small hand movement without outer detector, frame \(step)")
+            if result["source"] as? String == "tracking" { tracked += 1 }
+            if let patches = result["patches"] as? [[String:Any]] {
+                for i in 0..<9 { for c in 0..<3 {
+                    check(abs((patches[i]["rgb"] as! [Double])[c]-Double(palette[colors[i]][c]))<15,"tracked samples stay on the same stickers")
+                }}
+            }
+        }
+        print("Tracked sequence: \(tracked)/12, average \(Int(Date().timeIntervalSince(start)*1000/12)) ms")
+        check(tracked >= 10,"tracking continues without relying on repeated rectangle detection")
+        let changedColors = [5,4,3,2,2,1,0,5,4]
+        let changed = guided.analyze(fixture(bytes:pixels(colors:changedColors),quad:guide))
+        check(changed["status"] as? String == "found","a new face remains readable")
+        if let patches = changed["patches"] as? [[String:Any]] {
+            for i in 0..<9 { for c in 0..<3 {
+                check(abs((patches[i]["rgb"] as! [Double])[c]-Double(palette[changedColors[i]][c]))<15,"tracker resamples colors instead of repeating the previous face")
+            }}
+        }
+        check(guided.analyze(fixture(bytes:blank,quad:guide))["status"] as? String == "searching","tracking cannot turn a plain square into a grid")
+        check(guided.analyze(fixture(bytes:blocked,quad:guide))["status"] as? String == "searching","guide cannot bypass occlusion checks")
+        let stripes = pixels(colors:[0,1,2,0,1,2,0,1,2],border:false)
+        check(guided.analyze(fixture(bytes:stripes,quad:guide))["status"] as? String == "searching","one-direction stripes cannot pass as a 3 by 3 face")
+        check(guided.analyze(guideImage)["status"] as? String == "found","guide reacquires after loss")
+        guided.reset()
+        check(guided.analyze(guideImage)["source"] as? String == "guide","camera restart discards tracking history")
+        // A mildly softer picture should still be found through the guide.
+        guided.reset()
+        let softened = guideImage.applyingFilter("CIGaussianBlur",parameters:["inputRadius":1.1]).cropped(to:guideImage.extent)
+        check(guided.analyze(softened)["status"] as? String == "found","guide tolerates a mildly soft camera image")
         // Optional synthetic frame for an isolated UI QA bundle. Never uses a camera.
         if CommandLine.arguments.count == 3 && CommandLine.arguments[1] == "--export-fixture" {
             let image=fixture(bytes:data,quad:tilted)

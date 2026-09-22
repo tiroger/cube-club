@@ -13,12 +13,13 @@ struct CameraPipelineTests {
         let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0)
         let received = DispatchSemaphore(value: 0), analyzed = DispatchSemaphore(value: 0)
         let lock = NSLock()
+        var resets = 0
         var previewDone: (() -> Void)?, analysisToken: String?, analysisCount = 0, previewToken: String?
         let pipeline = CameraFramePipeline(encode: { _ in "fixture" }, analyze: { _ in
             lock.lock(); analysisCount += 1; let first = analysisCount == 1; lock.unlock()
             if first { entered.signal(); release.wait() }
             return ["status": "searching"]
-        })
+        }, resetAnalysis: { lock.lock(); resets += 1; lock.unlock() })
         pipeline.onPreview = { packet, done in
             lock.lock(); previewToken = packet["token"] as? String; previewDone = done; lock.unlock()
             received.signal()
@@ -47,10 +48,12 @@ struct CameraPipelineTests {
         check(analyzed.wait(timeout: .now()+2) == .success, "New session can analyze")
         lock.lock(); let correctTokens = previewToken == "new" && analysisToken == "new"; let finalDone = previewDone; lock.unlock()
         check(correctTokens, "Only the new stream is delivered")
+        lock.lock(); let resetCount = resets; lock.unlock()
+        check(resetCount == 2, "Tracking is reset on the analysis lane for each camera session")
         finalDone?(); pipeline.stop()
         pipeline.submit(image)
         check(received.wait(timeout: .now()+0.05) == .timedOut, "Stopped pipeline does not deliver frames")
-        print("9 camera pipeline lifecycle checks passed: bounded work, independent lanes, stop and restart.")
+        print("10 camera pipeline lifecycle checks passed: bounded work, independent lanes, stop and restart.")
     }
     static func main() {
         boundedPipelineChecks()

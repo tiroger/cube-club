@@ -22,8 +22,10 @@ final class CameraFramePipeline {
     private var lastAnalysis = -Double.infinity
     private let encode: (CIImage) -> String?
     private let analyze: (CIImage) -> [String: Any]
+    private let resetAnalysis: () -> Void
+    private var analysisGeneration = -1 // Accessed only on analysisQueue.
 
-    init(encode: ((CIImage) -> String?)? = nil, analyze: ((CIImage) -> [String: Any])? = nil) {
+    init(encode: ((CIImage) -> String?)? = nil, analyze: ((CIImage) -> [String: Any])? = nil, resetAnalysis: (() -> Void)? = nil) {
         let previewContext = CIContext(options: [.cacheIntermediates: false])
         let vision = CubeVision(context: CIContext(options: [.cacheIntermediates: false]))
         self.encode = encode ?? { image in
@@ -33,6 +35,7 @@ final class CameraFramePipeline {
             return "data:image/jpeg;base64," + data.base64EncodedString()
         }
         self.analyze = analyze ?? { vision.analyze(Self.scaled($0, width: 960)) }
+        self.resetAnalysis = resetAnalysis ?? { vision.reset() }
     }
 
     private static func scaled(_ image: CIImage, width: CGFloat) -> CIImage {
@@ -86,6 +89,9 @@ final class CameraFramePipeline {
             analysisQueue.async { [self] in
                 autoreleasepool {
                     guard current() else { finish(preview: false); return }
+                    if analysisGeneration != ticket.generation {
+                        resetAnalysis(); analysisGeneration = ticket.generation
+                    }
                     let reading = analyze(image)
                     guard current(), let deliver = onAnalysis else { finish(preview: false); return }
                     deliver(base.merging(["vision": reading]) { _, new in new }) { finish(preview: false) }

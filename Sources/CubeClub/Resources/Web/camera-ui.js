@@ -13,21 +13,42 @@ function cameraPanel(){
   return `<div class="camera-view vision-camera"><canvas id="camera-canvas" width="720" height="540" aria-label="Unmirrored camera preview. Fit one whole face into the dashed square. A solid outline follows a detected cube face."></canvas><div class="camera-empty" id="camera-empty">${icon('camera')}<strong>Let’s find your cube</strong><button class="button primary" data-action="startCamera">${icon('camera')}Use my camera</button><p>Fit one whole face inside the square. Face it toward the camera and keep fingers behind the edges.</p></div><span class="vision-badge" id="vision-badge">${icon('search')}FIT ONE FACE IN THE SQUARE</span></div>
   <div class="vision-feedback" id="vision-feedback" role="status"><span class="vision-dot"></span><div><strong id="vision-title">Ready when you are</strong><p id="vision-message">Your camera images stay on this Mac.</p></div></div>
   <div class="vision-progress" aria-hidden="true"><span id="vision-progress"></span></div>
-  <div class="camera-controls"><button class="button secondary" data-action="captureFace" disabled>${icon('camera')}${v.captured.has(face)?'Read face again':'Read this face'}</button>${scan.camera?'<button class="button secondary" data-action="stopCamera">Turn camera off</button>':''}${scan.mode!=='check'?'<button class="text-button" data-action="demoScan">Try a sample cube</button>':''}</div>
+  <div class="camera-controls"><button class="button secondary" data-action="captureFace" disabled>${icon('camera')}${v.captured.has(face)?'Use a new picture':'Use this picture'}</button>${scan.camera?'<button class="button secondary" data-action="stopCamera">Turn camera off</button>':''}${scan.mode!=='check'?'<button class="text-button" data-action="demoScan">Try a sample cube</button>':''}</div>
   <label class="auto-capture"><input type="checkbox" data-camera-auto ${scan.autoCapture!==false?'checked':''}> Read automatically when steady <span>Always pauses for your review</span></label>
   <details class="color-teaching" id="color-teaching" ${scan.calibrating?'open':''}><summary>Match my cube’s colors <span>${learned}/6 learned</span></summary><p>Optional: teach all six centers in this room’s light. Choose a face tab above, show that center, and hold still. Automatic capture pauses here.</p><div class="learned-colors" aria-label="Learned center colors">${FACES.map(f=>`<span style="--sticker:${COLORS[f]}" aria-label="${COLOR_NAMES[f]} ${cameraPalette[f]?'learned':'waiting'}">${cameraPalette[f]?'✓':'·'}</span>`).join('')}</div><button class="button secondary" data-action="teachCenter" disabled>Teach ${COLOR_NAMES[face]} from the center</button><button class="text-button" data-action="resetCameraColors" ${learned?'':'disabled'}>Reset learned colors</button><p class="small-note">${CubeClubVision.profileReady(cameraPalette)?'Your six colors are active. Close this panel to capture.':'All six are needed to use your color match.'} Re-teach if the lighting changes. ${learned?'Learned colors are saved on this Mac, including after you quit. Re-teach if you change the camera or cube.':''}</p></details>`;
 }
 function visionCopy(result){
   switch(result?.status){
-  case 'ready':return ['A lovely clear view',scan?.autoCapture===false?'Ready! Choose “Read this face” to capture.':'Hold your cube still for its picture.'];
-  case 'hold':return ['Found your cube. Hold still…','We’re checking a few pictures agree. Keep fingers off the stickers.'];
+  case 'ready':return ['A lovely clear view',scan?.autoCapture===false?'Ready! Choose “Use this picture” to capture.':'Hold your cube still for its picture.'];
+  case 'hold':return ['Found your cube','Hold still for automatic capture, or choose “Use this picture” and check its colors.'];
   case 'recovering':return ['Still with you…','Hold the same face here. We’re checking the next clear picture.'];
-  case 'wrong-center':return [`That looks like the ${COLOR_NAMES[result.seenCenter]} center`,`Show the ${COLOR_NAMES[scanOrder[scan.index]]} center. You can teach the colors below if this looks wrong.`];
-  case 'uncertain':return ['A few colors need a clearer look',result.reason==='dark'?'Try a little more light.':result.reason==='glare'?'Tip the cube slightly to move the bright reflection.':'Keep fingers off the stickers and try even light. You can also teach your cube’s colors below.'];
+  case 'wrong-center':return [`The center looks ${COLOR_NAMES[result.seenCenter]}`,`If this really is the ${COLOR_NAMES[scanOrder[scan.index]]} face, choose “Use this picture” and check every color. Otherwise, show the requested face.`];
+  case 'uncertain':return ['Some colors need your help',result.reason==='dark'?'Try more light, or use this picture and fill in the question marks.':result.reason==='glare'?'Tip the cube to avoid glare, or use this picture and check the colors.':'Use this picture and check its colors, or try steadier, even light.'];
   case 'too-small':return ['A little closer, please','Make the face bigger in the camera view. Keep all four corners visible.'];
   case 'unavailable':return ['Vision needs a restart','Try reconnecting the camera. You can still paint the colors by hand.'];
   default:return ['Fit one face inside the square','Match the cube’s edges to the dashed square. Face it toward the camera, with fingers behind the edges.'];
   }
+}
+// A verified face outline is enough for an explicit, reviewed suggestion. The
+// stricter six-frame consensus is still required for automatic capture.
+function reviewableCameraReading(v,now=Date.now()){
+  const r=v?.result;
+  return !!scan?.camera&&!scan.solving&&!scan.calibrating&&
+    now-lastFrameTime>=0&&now-lastFrameTime<1200&&
+    now-v.resultTime>=0&&now-v.resultTime<1200&&
+    Array.isArray(r?.corners)&&r.corners.length===4&&
+    Array.isArray(r?.colors)&&r.colors.length===9&&
+    r.colors.every(color=>FACES.includes(color)||color==='?');
+}
+function teachableCameraCenter(v,now=Date.now()){
+  if(!scan?.camera||!scan.calibrating||scan.solving||
+     now-v?.resultTime<0||now-v?.resultTime>=1200||
+     !Array.isArray(v?.result?.corners)||v.result.corners.length!==4)return false;
+  const frames=v.tracker.frames.slice(-2);
+  if(frames.length!==2||frames[1].time-frames[0].time>700)return false;
+  const centers=frames.map(frame=>frame.patches[4]?.rgb);
+  return centers.every(rgb=>Array.isArray(rgb)&&rgb.length===3&&rgb.every(Number.isFinite))&&
+    CubeClubVision.colorDistance(CubeClubVision.lab(centers[0]),CubeClubVision.lab(centers[1]))<10;
 }
 function updateCameraFeedback(){
   const v=cameraState();if(!v||!$('#vision-title'))return;
@@ -35,7 +56,7 @@ function updateCameraFeedback(){
   const evidenceFresh=fresh&&Date.now()-v.resultTime<1800;
   let [title,message]=!scan.camera?['Ready when you are','Your camera images stay on this Mac.']:!fresh?['Waiting for a fresh picture','Reconnect the camera if the picture stays paused.']:visionCopy(evidenceFresh?v.result:null);
   if(fresh&&v.captured.has(v.face)&&!scan.calibrating){title='Take a look together.';message='Your color board is paused for review. Check all nine squares on the right, then confirm.';}
-  if(fresh&&scan.calibrating){title=evidenceFresh&&v.result?.geometryReady?'Center ready to learn':'Show the center and hold still';message=`Make sure this is the ${COLOR_NAMES[v.face]} center, then choose “Teach ${COLOR_NAMES[v.face]} from the center.”`;}
+  if(fresh&&scan.calibrating){title=teachableCameraCenter(v)?'Center ready to learn':'Show the center and hold a moment';message=`Make sure this is the ${COLOR_NAMES[v.face]} center, then choose “Teach ${COLOR_NAMES[v.face]} from the center.”`;}
   const badge=$('#vision-badge');
   if(badge)badge.textContent=fresh&&v.captured.has(v.face)&&!scan.calibrating?'CHECK YOUR COLORS':evidenceFresh&&v.result?.corners?'FACE FOUND':'FIT ONE FACE IN THE SQUARE';
   if($('#vision-title').textContent!==title)$('#vision-title').textContent=title;
@@ -43,8 +64,8 @@ function updateCameraFeedback(){
   $('#vision-feedback').classList.toggle('ready',!!(evidenceFresh&&v.result?.ready));
   $('#vision-progress').style.width=`${evidenceFresh?(v.result?.progress||0)*100:0}%`;
   const capture=$('[data-action="captureFace"]'),teach=$('[data-action="teachCenter"]');
-  if(capture)capture.disabled=!!scan.solving||!evidenceFresh||!v.result?.ready||!!scan.calibrating;
-  if(teach)teach.disabled=!!scan.solving||!evidenceFresh||!v.result?.geometryReady;
+  if(capture)capture.disabled=!reviewableCameraReading(v);
+  if(teach)teach.disabled=!teachableCameraCenter(v);
 }
 function refreshCameraPanel(){
   cameraState();
@@ -68,6 +89,7 @@ window.onCameraFrame=packet=>{
         if(scan!==owner||!freshCameraPacket(packet)||packet.sequence!==owner.previewSequence)return;
         lastFrame=img;lastFrameTime=packet.capturedAt;
         drawCamera(img);
+        updateCameraFeedback();
       }finally{resolve();}
     };
     img.onerror=()=>resolve();
@@ -120,13 +142,17 @@ function drawCamera(img){
 }
 function captureFace(automatic=false){
   const v=cameraState();if(!v||scan.solving)return;
-  if(!scan.camera||Date.now()-lastFrameTime>1800||Date.now()-v.resultTime>1800||!v.result?.ready||scan.calibrating){
-    $('#scan-error').textContent='Wait for a steady, clear view of the requested face. You can always paint colors by hand.';return;
+  if(!reviewableCameraReading(v)||(automatic&&!v.result.ready)){
+    if(!automatic)$('#scan-error').textContent='Wait until the camera outlines one whole face, then choose “Use this picture.” You can always paint colors by hand.';
+    return;
   }
   const face=v.face;
-  scan.faces[face]=v.result.colors.slice();scan.confirmed.delete(face);v.captured.add(face);
+  const colors=v.result.colors.slice(),suggestedCenter=colors[4],unknown=colors.filter((color,i)=>i!==4&&color==='?').length;
+  colors[4]=face; // The fixed center follows the face tab, never a guess.
+  scan.faces[face]=colors;scan.confirmed.delete(face);v.captured.add(face);
   renderScan();
-  $('#scan-error').textContent=automatic?'Face captured automatically. Check every color and the top-edge orientation before confirming.':'Fresh colors captured. Check every square before confirming.';
+  const centerWarning=suggestedCenter!==face&&suggestedCenter!=='?'?` The camera called the center ${COLOR_NAMES[suggestedCenter]}; check that this is really the ${COLOR_NAMES[face]} face.`:'';
+  $('#scan-error').textContent=`Picture ready. Check every square and the top-edge direction.${unknown?` Fill in ${unknown} question mark${unknown===1?'':'s'} before confirming.`:''}${centerWarning}`;
 }
 function lockCameraFace(){const v=cameraState();if(v)v.captured.add(v.face);}
 function revealCamera(){
@@ -149,7 +175,7 @@ function stopCubeCamera(){
   if(native)bridge('cameraStop');renderScan();
 }
 async function teachCameraCenter(){
-  const v=cameraState();if(!scan?.camera||scan.solving||!v?.result?.geometryReady||Date.now()-v.resultTime>1800)return;
+  const v=cameraState();if(!teachableCameraCenter(v))return;
   const result=CubeClubVision.teachColor(cameraPalette,v.face,v.result.center);
   if(result.error){$('#scan-error').textContent=result.error;return;}
   const owner=scan;v.tracker.reset();v.result=null;

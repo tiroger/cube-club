@@ -25,6 +25,29 @@ for(const theme of ['light','dark']){
 }
 const patches=[...'URFDFLBRU'].map(c=>({rgb:{U:[245,215,30],R:[235,110,25],F:[25,160,65],D:[235,235,225],L:[210,35,45],B:[35,85,210]}[c],spread:1,clipped:0}));
 const reading={status:'found',gridScore:.98,corners:[[.3,.15],[.7,.15],[.7,.85],[.3,.85]],patches};
+newScan();scan.camera=true;scan.cameraToken='guide-ui';scan.autoCapture=true;renderScan();
+await preview();onCameraAnalysis({token:'guide-ui',sequence:seq,capturedAt:Date.now(),vision:reading});
+check(!scan.vision.result.ready&&scan.faces.F.includes('?'),'A single outlined frame stays out of automatic capture');
+check(!$('[data-action="captureFace"]').disabled,'The outlined frame offers immediate reviewed capture');
+check($('[data-action="captureFace"]').textContent.includes('Use this picture'),'The manual picture action is clear');
+$('[data-action="captureFace"]').click();
+await wait(40);
+check(scan.faces.F.join('')==='URFDFLBRU'&&!scan.confirmed.has('F'),'Clicking the picture uses current colors and waits for review');
+newScan();scan.camera=true;scan.cameraToken='guide-ui';scan.autoCapture=false;renderScan();
+const unclear={...reading,patches:reading.patches.map((patch,i)=>i===0?{...patch,spread:48}:patch)};
+await preview();onCameraAnalysis({token:'guide-ui',sequence:seq,capturedAt:Date.now(),vision:unclear});
+$('[data-action="captureFace"]').click();
+await wait(40);
+check(scan.faces.F[0]==='?'&&$('#scan-error').textContent.includes('1 question mark'),'A hard color remains visibly unresolved for correction');
+newScan();scan.camera=true;scan.cameraToken='guide-ui';scan.autoCapture=false;renderScan();
+scan.calibrating=true;renderScan();
+await preview();onCameraAnalysis({token:'guide-ui',sequence:seq,capturedAt:Date.now(),vision:reading});
+check($('[data-action="teachCenter"]').disabled,'Center teaching waits for a second agreeing picture');
+await wait(210);await preview();onCameraAnalysis({token:'guide-ui',sequence:seq,capturedAt:Date.now(),vision:reading});
+check(!$('[data-action="teachCenter"]').disabled,'Two agreeing pictures make center teaching available');
+$('[data-action="teachCenter"]').click();await wait(100);
+check(cameraPalette.F?.length===3,'The explicit color sample is saved through the native bridge');
+newScan();scan.camera=true;scan.cameraToken='guide-ui';scan.autoCapture=false;renderScan();
 for(let i=0;i<6;i++){await wait(180);await preview();onCameraAnalysis({token:'guide-ui',sequence:seq,capturedAt:Date.now(),vision:reading});}
 check(! $('[data-action="captureFace"]').disabled,'Fresh verified evidence enables explicit capture');
 check($('#vision-badge').textContent==='FACE FOUND','Found face replaces the alignment badge');

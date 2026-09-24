@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.9.2-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, a fixed Finder layout, and a matching volume icon.
+Open `dist/Cube-Club-0.9.3-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, and a fixed Finder layout. Its top level contains only the app and Applications, even when Finder shows hidden files.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 
@@ -29,7 +29,7 @@ To reproduce the complete app and installer build:
 
 The script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies on its first run. Later runs reuse them. Python 3.10+ and the Swift command-line tools are required. Use `./scripts/build-dmg.sh --skip-build` to package an already-built app.
 
-Output goes to `dist/`, with the version and architecture read from the app, plus a `.dmg.sha256` checksum file. Before replacing a previous image, the script checks disk-image integrity, mounts it read-only, verifies both signatures and exact app contents, and checks the Applications link, background, and icon locations. Temporary images are ejected automatically. Building disk images requires normal access to macOS disk-image services; restricted command sandboxes can block them.
+Output goes to `dist/`, with the version and architecture read from the app, plus a `.dmg.sha256` checksum file. Before replacing a previous image, the script checks disk-image integrity, mounts it read-only, verifies both signatures and exact app contents, and checks the Applications link, embedded background, and icon locations. Temporary images are ejected automatically. Building disk images requires normal access to macOS disk-image services; restricted command sandboxes can block them.
 
 The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`.
 

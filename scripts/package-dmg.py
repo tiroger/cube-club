@@ -6,15 +6,18 @@ import os
 from pathlib import Path
 import plistlib
 import re
+import shutil
 import subprocess
 import tempfile
 
 import dmgbuild
 from ds_store import DSStore
+from mac_alias import Alias
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "build/Cube Club.app"
 BACKGROUND = ROOT / "build/dmg-background.tiff"
+EMBEDDED_BACKGROUND = Path("Contents/Resources/InstallerBackground.tiff")
 LAYOUT = json.loads((ROOT / "scripts/dmg-layout.json").read_text())
 
 
@@ -38,6 +41,18 @@ def contents(folder):
     return result
 
 
+def tuck_background_into_app(mount_point, _options):
+    """Keep Finder's background file out of the installer's top-level view."""
+    volume = Path(mount_point)
+    source = volume / ".background.tiff"
+    target = volume / APP.name / EMBEDDED_BACKGROUND
+    if digest(source) != digest(target):
+        raise RuntimeError("The installer background differs from the signed app resource.")
+    # Rename on the same HFS+ volume to retain the file ID used by Finder's
+    # background alias. The signed app already contains these exact bytes.
+    source.replace(target)
+
+
 def verify(image):
     run("/usr/bin/hdiutil", "verify", str(image), capture=True)
     with tempfile.TemporaryDirectory(prefix="cube-club-dmg-check-") as temporary:
@@ -48,22 +63,23 @@ def verify(image):
             run("/usr/bin/hdiutil", "attach", "-readonly", "-nobrowse", "-noautoopen",
                 "-mountpoint", str(mount), str(image), capture=True)
             attached = True
-            visible = {p.name for p in mount.iterdir() if not p.name.startswith(".")}
-            if visible != {"Cube Club.app", "Applications"}:
-                raise RuntimeError(f"Unexpected installer contents: {visible}")
+            root_items = {p.name for p in mount.iterdir()}
+            if root_items != {"Cube Club.app", "Applications", ".DS_Store"}:
+                raise RuntimeError(f"Unexpected installer contents: {root_items}")
             if not (mount / "Applications").is_symlink() or os.readlink(mount / "Applications") != "/Applications":
                 raise RuntimeError("The Applications shortcut is not correct.")
             run("/usr/bin/codesign", "--verify", "--deep", "--strict", str(mount / APP.name))
             if contents(mount / APP.name) != contents(APP):
                 raise RuntimeError("The packaged app differs from the source build.")
-            if digest(mount / ".background.tiff") != digest(BACKGROUND):
+            embedded = mount / APP.name / EMBEDDED_BACKGROUND
+            if digest(embedded) != digest(BACKGROUND):
                 raise RuntimeError("The installer background differs from the prepared artwork.")
-            if digest(mount / ".VolumeIcon.icns") != digest(ROOT / "assets/AppIcon.icns"):
-                raise RuntimeError("The volume icon differs from the app icon.")
             with DSStore.open(str(mount / ".DS_Store"), "r") as store:
                 view = store["."]["icvp"]
                 if view["backgroundType"] != 2 or not view.get("backgroundImageAlias"):
                     raise RuntimeError("Finder background is not configured.")
+                if Alias.from_bytes(view["backgroundImageAlias"]).target.cnid != embedded.stat().st_ino:
+                    raise RuntimeError("Finder background alias does not identify the embedded artwork.")
                 for name, position in LAYOUT["icons"].items():
                     if tuple(store[name]["Iloc"]) != tuple(position):
                         raise RuntimeError(f"Incorrect icon location: {name}")
@@ -74,7 +90,7 @@ def verify(image):
         finally:
             if attached:
                 run("/usr/bin/hdiutil", "detach", str(mount), capture=True)
-    print("Verified: read-only image, exact app contents, signature, Applications link, artwork and icon layout.")
+    print("Verified: read-only image, two top-level items, exact app contents, signature, Applications link, artwork and icon layout.")
 
 
 def main():
@@ -88,6 +104,10 @@ def main():
     arch_label = "universal" if set(architecture) == {"arm64", "x86_64"} else "-".join(architecture)
     if not re.fullmatch(r"[a-zA-Z0-9_-]+", arch_label):
         raise SystemExit("Unexpected app architecture.")
+    app_background = APP / EMBEDDED_BACKGROUND
+    if not app_background.is_file() or digest(app_background) != digest(BACKGROUND):
+        shutil.copyfile(BACKGROUND, app_background)
+        run("/usr/bin/codesign", "--force", "--deep", "--sign", "-", str(APP))
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", str(APP))
     destination = ROOT / "dist"
     destination.mkdir(exist_ok=True)
@@ -98,7 +118,7 @@ def main():
         settings = {
             "format": "UDZO", "filesystem": "HFS+", "compression_level": 9,
             "size": "48m", "files": [str(APP)], "symlinks": {"Applications": "/Applications"},
-            "background": str(BACKGROUND), "icon": str(ROOT / "assets/AppIcon.icns"),
+            "background": str(BACKGROUND), "create_hook": tuck_background_into_app,
             # Finder counts its title/path bars in the window bounds. Keep enough
             # room for the whole illustration even when the user's path bar is on.
             "window_rect": ((160, 120), (LAYOUT["width"], LAYOUT["height"] + LAYOUT["window_chrome_height"])),

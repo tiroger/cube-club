@@ -18,7 +18,19 @@
   function moves(alg) { return alg.trim() ? alg.trim().split(/\s+/) : []; }
   function describeMove(move) {
     if (!move) return 'You did it!';
-    return `Turn the ${FACE_NAMES[move[0]]} face ${move.endsWith('2') ? 'halfway around' : move.endsWith("'") ? 'counterclockwise' : 'clockwise'}.`;
+    const base = move[0], half = move.endsWith('2'), back = move.endsWith("'");
+    const turn = half ? 'halfway around' : back ? 'counterclockwise' : 'clockwise';
+    if (FACE_NAMES[base]) return `Turn the ${FACE_NAMES[base]} face ${turn}.`;
+    // Slices and rotations follow their reference faces: M like L, E like D,
+    // S like F, and x, y, z like R, U, F.
+    if (base === 'M') return half ? 'Turn the middle slice halfway around.' : back ? 'Push the middle slice up at the front.' : 'Pull the middle slice down at the front.';
+    if (base === 'E') return half ? 'Turn the equator slice halfway around.' : back ? 'Slide the equator slice so the front row moves left.' : 'Slide the equator slice so the front row moves right.';
+    if (base === 'S') return `Turn the standing slice ${turn}, like the front face.`;
+    if ('urfdlb'.includes(base)) return `Turn the ${FACE_NAMES[base.toUpperCase()]} two layers ${turn}.`;
+    if (base === 'x') return half ? 'Roll the whole cube halfway over.' : back ? 'Roll the whole cube so the front goes down.' : 'Roll the whole cube so the front comes to the top.';
+    if (base === 'y') return half ? 'Spin the whole cube halfway around.' : back ? 'Spin the whole cube so the front moves right.' : 'Spin the whole cube so the front moves left.';
+    if (base === 'z') return `Tilt the whole cube ${turn}, like the front face.`;
+    return 'Make the next turn.';
   }
   function parity(values) { let n=0; for(let i=0;i<values.length;i++) for(let j=i+1;j<values.length;j++) if(values[i]>values[j]) n++; return n%2; }
   function validate(facelets) {

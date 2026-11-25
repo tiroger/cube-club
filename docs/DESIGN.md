@@ -53,3 +53,12 @@ Snapshot checks need hands-on physical-cube testing. Suggested colors require re
 **A saved place for each adventure.** Completed turns checkpoint locally. Lesson and guided-solve slots are separate, and the clubhouse puts their Continue cards ahead of the usual invitation. The pause control offers an explicit, reassuring stopping point. Resume shows all six expected faces with top-edge guidance; a changed physical cube needs a fresh scan. Saved data contains only bounded model values. Trusted lesson content and teaching-stage plans are reconstructed from bundled code. Independent checks restart after a break to preserve the fresh-attempt requirement.
 
 **Backups in the grown-up corner.** Native file panels save portable JSON. Imports are validated and previewed before acknowledged replacement; the previous journey is kept as a recoverable local copy. No arbitrary backup text becomes HTML or teaching instructions. Camera calibration stores only explicit center-color samples, survives restarts, and can be forgotten separately from progress. Changing cube, camera, or lighting still calls for re-teaching.
+
+## An optional Roux branch
+
+**Block Builders** is a side path that opens when First Solve is graduated, next to Piece Partners. It teaches Roux: two 1×2×3 blocks, the four top corners, then the last six edges with only M and U turns. A child who prefers building blocks can follow it without giving up the main path; graduating it opens nothing else, and the clubhouse keeps suggesting the main path unless the child chooses the branch. A parent can open it with its own grant. Main-path grants do not open it.
+
+The cube now animates slice, wide and whole-cube turns, and the turn pad adds a row for whichever of these a lesson uses. Corners use two steps a child can manage: Sune (already met in First Solve) turns them yellow-up, then one corner swap trades two corners. If no side matches, the same swap from any side creates a matching side. The well-known corner 3-cycle R U′ L′ U R′ U′ L U is not used for this step, because it also twists the corners it moves.
+
+Lessons are prepared cases, like the rest of Cube Quest. Guided Roux solves of a scanned cube would need a block-finding search and are not included.
+

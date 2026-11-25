@@ -4,7 +4,7 @@ async function click(selector){const b=document.querySelector(selector);assert(b
 function checked(selector){const b=document.querySelector(selector);assert(b,'Checkbox exists');b.checked=true;b.dispatchEvent(new Event('change',{bubbles:true}));}
 progress=normalizeProgress({});render();
 assert(document.querySelectorAll('[data-nav="timer"]').length===1,'Timer navigation exists');
-await click('[data-nav="learn"]');assert(document.querySelectorAll('.quest-stop').length===4,'Four stage cards render');
+await click('[data-nav="learn"]');assert(document.querySelectorAll('.quest-map .quest-stop').length===4&&document.querySelectorAll('.quest-branches .quest-stop.branch').length===1,'Four main stage cards and one branch card render');
 await click('[data-quest-stage="advanced"]');assert(document.querySelector('.quest-gate').textContent.includes('Piece Partners'),'Locked stage states exact prerequisite');
 await click('[data-lesson="pll-t"]');assert(!$('#overlay').hidden&&route==='learn','Locked lesson opens preview, not lesson');await click('[data-action="questReturn"]');assert(progress.quest.selected==='beginner','Locked preview returns to an actionable stage');
 navigate('patterns');assert(route==='learn','Pattern route cannot bypass stage gate');
@@ -37,8 +37,8 @@ for(const stageInfo of Quest.STAGES){
  assert(progress.quest.challenges.includes(stageInfo.id),'Stage challenge complete');
  await click(`[data-parent-graduate="${stageInfo.id}"]`);assert($('[data-action="confirmParent"]').disabled,'Parent checkpoint starts disabled');checked('#quest-parent');assert($('[data-action="confirmParent"]').disabled,'One confirmation is insufficient');checked('#quest-observed');await click('[data-action="confirmParent"]');assert(progress.quest.graduated.includes(stageInfo.id),'Physical milestone graduates stage');assert($('.graduation-stamp'),'Celebration shows graduation stamp');await click('#overlay [data-quest-stage]');
 }
-assert(progress.quest.graduated.length===4,'Four-stage journey completes end to end');
-const serialized=JSON.stringify(progress);progress=normalizeProgress(JSON.parse(serialized));assert(Quest.mastered(progress,'speed-lookahead')&&progress.quest.graduated.length===4,'Progress survives serialized reload');
+assert(progress.quest.graduated.length===Quest.STAGES.length&&progress.quest.graduated.includes('roux'),'Every stage and the Roux branch complete end to end');
+const serialized=JSON.stringify(progress);progress=normalizeProgress(JSON.parse(serialized));assert(Quest.mastered(progress,'speed-lookahead')&&progress.quest.graduated.length===Quest.STAGES.length,'Progress survives serialized reload');
 navigate('timer');await click('[data-action="startTimer"]');assert(solveTimer.phase==='running','Timer starts');solveTimer.started-=65000;await click('[data-action="stopTimer"]');assert(solveTimer.phase==='review'&&progress.quest.times.length===0,'Stopping does not save unconfirmed cube');await click('[data-action="saveTime"]');assert(progress.quest.times.length===1&&solveTimer.phase==='ready','Confirmed solved cube saves one time');
 await click('[data-action="startTimer"]');navigate('learn');assert(solveTimer.phase==='review'&&timerInterval===null,'Leaving timing stops elapsed timer and interval');navigate('timer');await click('[data-action="discardTime"]');assert(progress.quest.times.length===1,'Discard does not change history');
 progress=normalizeProgress({});navigate('timer');assert(!document.querySelector('[data-action="startTimer"]'),'Fresh timer remains locked');await click('[data-action="parentFirstSolve"]');checked('#quest-parent');checked('#quest-observed');await click('[data-action="confirmParent"]');assert(Quest.timerOpen(progress)&&!Quest.unlocked(progress,'intermediate'),'Early independent solve opens only timer');

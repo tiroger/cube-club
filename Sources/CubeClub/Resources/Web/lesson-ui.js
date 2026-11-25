@@ -53,7 +53,7 @@ function updateSequence() {
     $('#lesson-pieces .piece-map').open = !!mapOpen;
   }
   if ($('#recall-pad'))
-    $('#recall-pad').innerHTML = recall && !done ? turnPad(true) : '';
+    $('#recall-pad').innerHTML = recall && !done ? turnPad(true, extraTurns(session.algorithm)) : '';
   if (session.type === 'lesson')
     document.querySelectorAll('.lesson-copy>.why-panel,.lesson-copy>.when-panel').forEach(el => el.hidden = mode === 'check');
 }

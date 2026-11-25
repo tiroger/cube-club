@@ -1,9 +1,9 @@
 (function(){
  let checks=0;const assert=(v,m)=>{checks++;if(!v)throw Error(m);},D=CubeClubContinuity,C=CubeClubCore,Q=CubeClubQuest;
- const copy=x=>JSON.parse(JSON.stringify(x)),p=C.normalizeProgress({quest:{grants:['speed']}});
+ const copy=x=>JSON.parse(JSON.stringify(x)),p=C.normalizeProgress({quest:{grants:['speed','roux']}});
  assert(p.calibration===null&&!p.savedSessions.lesson&&!p.savedSessions.solve,'Legacy progress migrates without lost milestones');
  for(const l of C.LESSONS){for(const mode of ['guide','recall','check']){
-  const progress=C.normalizeProgress({completed:[l.id],quest:{grants:['speed'],records:{[l.id]:{practiced:true,understood:true}}}});
+  const progress=C.normalizeProgress({completed:[l.id],quest:{grants:['speed','roux'],records:{[l.id]:{practiced:true,understood:true}}}});
   const s={type:'lesson',lesson:l,initial:C.lessonInitial(l),algorithm:C.moves(l.algorithm),index:Math.min(2,C.moves(l.algorithm).length),mode,attempt:{assisted:true}};
   const saved=D.capture(s,progress,1000),result=D.restore(saved,progress),index=mode==='check'?0:s.index;
   assert(!result.error&&result.session.index===index,'Restores '+l.id+' '+mode);

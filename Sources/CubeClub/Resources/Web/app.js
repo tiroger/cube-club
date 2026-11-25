@@ -83,8 +83,16 @@ function nextLesson() {
 function stage() {
   return `<div><div class="cube-stage"><div class="stage-top"><span>YOUR PRACTICE CUBE</span><button class="icon-button" data-action="homeView" aria-label="Reset cube viewing angle" title="Reset viewing angle">${icon('cube')}</button></div><canvas id="cube-canvas" tabindex="0" role="img" aria-label="Interactive 3D cube. Drag or use arrow keys to look around. Home resets the view."></canvas><div class="stage-bottom"><span>↔ Drag to look around</span><button data-action="labels">${icon('layers')}Face letters</button></div></div><div class="face-legend">${['U', 'F', 'R'].map(f => `<span><i style="background:${COLORS[f]}"></i>${f} = ${FACE_NAMES[f]}</span>`).join('')}<span>Keep your grip the same during moves</span></div><div id="stage-actions"></div></div>`;
 }
-function turnPad(recall = false) {
-  return `<div class="turn-pad"><h3>${recall ? 'Your turn! Pick the next move.' : 'Try a turn. What changes?'}</h3><div class="turn-grid">${['', '\'', '2'].map(s => FACES.map(f => `<button data-turn="${f + s}" aria-label="${describeMove(f + s)}" ${busy ? 'disabled' : ''}>${f + s}</button>`).join('')).join('')}</div></div>`;
+// Face turns, plus a row for each slice or two-layer turn (such as M or r) in extra.
+function turnPad(recall = false, extra = []) {
+  const button = move => `<button data-turn="${move}" aria-label="${describeMove(move)}" ${busy ? 'disabled' : ''}>${move}</button>`;
+  const faces = ['', '\'', '2'].map(s => FACES.map(f => button(f + s)).join('')).join('');
+  const slices = extra.map(base => ['', '\'', '2'].map(s => button(base + s)).join('')).join('');
+  return `<div class="turn-pad"><h3>${recall ? 'Your turn! Pick the next move.' : 'Try a turn. What changes?'}</h3><div class="turn-grid">${faces}${slices}</div></div>`;
+}
+// The non-face turns an algorithm uses, in first-use order: "M' U M r" → ['M', 'r'].
+function extraTurns(algorithm) {
+  return [...new Set(algorithm.map(move => move[0]).filter(base => !FACES.includes(base)))];
 }
 function cancelPlayback() {
   playing = false;

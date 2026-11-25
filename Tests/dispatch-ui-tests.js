@@ -29,7 +29,7 @@ async function click(selector) {
 const roundOf = () => JSON.stringify(session.round);
 
 // Every stage open, so each activity can start without parent steps.
-progress = normalizeProgress({ voice: false, labels: true, quest: { grants: ['speed'] } });
+progress = normalizeProgress({ voice: false, labels: true, quest: { grants: ['speed', 'roux'] } });
 applyPreferences(false);
 navigate('home');
 assert(Quest.canOpen(progress, 'daisy') && Quest.canOpen(progress, Next.CASES[0].lessonID), 'Fixture opens every stage');
@@ -62,6 +62,11 @@ await press({ action: 'scramble' });
 assert(session.history.length === 20 && !session.cube.isSolved(), 'scramble makes twenty turns');
 await press({ action: 'resetPlay' });
 assert(session.history.length === 0 && session.cube.isSolved(), 'resetPlay returns a fresh cube');
+assert(['M', "M'", 'M2'].every(m => $(`.turn-grid [data-turn="${m}"]`)), 'the playground offers middle-slice turns');
+await press({ turn: 'M' });
+assert(session.history.join() === 'M' && !session.cube.isSolved(), 'an M turn moves the playground cube');
+await press({ action: 'undoPlay' });
+assert(session.cube.isSolved(), 'undo reverses an M turn');
 
 // lesson-ui.js: guided moves, playback, hints, modes, concept answer, next lesson.
 await press({ lesson: 'hello' });
@@ -99,6 +104,16 @@ await press({ action: 'nextLesson' });
 assert(route === 'lesson' && session.lesson.id === 'daisy' && $('#overlay').hidden, 'nextLesson opens the following lesson');
 await press({ action: 'learnAfterSolve' });
 assert(route === 'learn', 'learnAfterSolve returns to the learning path');
+
+// Roux lessons: no cross wording, and the turn pad offers the wide turn they use.
+await press({ lesson: 'roux-right-block' });
+assert(route === 'lesson' && session.lesson.id === 'roux-right-block', 'a Roux lesson opens');
+const rouxPanel = $('#lesson-pieces').textContent;
+assert(!/cross/i.test(rouxPanel) && rouxPanel.includes('Shared colors line up'), 'the Roux piece panel talks about the pair, not a cross');
+for (let i = 0; i < 3; i++) await press({ action: 'nextMove' });
+if (!$('#overlay').hidden) await press({ action: 'closeModal' });
+await press({ mode: 'recall' });
+assert(['r', "r'", 'r2'].every(m => $(`#recall-pad [data-turn="${m}"]`)) && !$('#recall-pad [data-turn="M"]'), 'the turn pad adds only the slice turns this lesson uses');
 
 // next-ui.js patternClick: pattern practice.
 const patternCase = Next.CASES[0];

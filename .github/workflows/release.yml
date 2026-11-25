@@ -1,0 +1,89 @@
+name: Release DMG
+
+# Push a tag such as v0.10.0 to test, package and publish a GitHub release.
+# Pull requests that touch packaging build the DMG as a downloadable artifact only.
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - scripts/build.sh
+      - scripts/build-dmg.sh
+      - scripts/package-dmg.py
+      - scripts/prepare-dmg-background.swift
+      - scripts/requirements-dmg.txt
+      - scripts/dmg-layout.json
+      - scripts/Info.plist
+      - scripts/CubeClub.entitlements
+      - assets/dmg/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dmg:
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # The packager needs Python 3.11+ (hashlib.file_digest).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read the app version
+        id: version
+        run: |
+          version=$(plutil -extract CFBundleShortVersionString raw scripts/Info.plist)
+          build=$(plutil -extract CFBundleVersion raw scripts/Info.plist)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Cube Club $version (build $build)"
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Info.plist version $version. Tag v$version instead."
+            exit 1
+          fi
+
+      - name: Run tests
+        run: ./scripts/test.sh
+
+      - name: Build and verify the DMG
+        run: ./scripts/build-dmg.sh
+
+      - name: Upload the DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cube-Club-${{ steps.version.outputs.version }}
+          path: |
+            dist/Cube-Club-${{ steps.version.outputs.version }}-*.dmg
+            dist/Cube-Club-${{ steps.version.outputs.version }}-*.dmg.sha256
+          if-no-files-found: error
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          # Release notes: this version's section of docs/VERIFICATION.md, if there is one.
+          # Its checksum describes a local build, so it is replaced with this download's.
+          awk -v heading="## Version $VERSION " 'index($0, heading) == 1 {on=1; next} on && /^## / {exit} on' docs/VERIFICATION.md \
+            | sed -E 's/ SHA-256: `[0-9a-f]{64}`\.//' > notes.md
+          checksum=$(cut -d' ' -f1 dist/Cube-Club-"$VERSION"-*.dmg.sha256)
+          {
+            echo "Cube Club $VERSION (build $BUILD) for Apple silicon Macs."
+            echo
+            echo "This build is ad hoc signed, not notarized, so macOS blocks it the first time. Try to open it once, then choose **Open Anyway** in **System Settings → Privacy & Security**."
+            echo
+            cat notes.md
+            echo
+            echo "SHA-256 of the DMG: \`$checksum\`"
+          } > release-notes.md
+          gh release create "$GITHUB_REF_NAME" dist/Cube-Club-"$VERSION"-*.dmg dist/Cube-Club-"$VERSION"-*.dmg.sha256 \
+            --title "Cube Club $VERSION" --notes-file release-notes.md --verify-tag

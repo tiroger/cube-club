@@ -153,12 +153,16 @@ The scan solver uses Kociemba’s two-phase algorithm through cube.js. It finds 
 ./scripts/test.sh
 ```
 
+GitHub Actions runs the same script and a full app build on every push to `main` and every pull request ([workflow](.github/workflows/test.yml)).
+
 Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional package installation. Native image tests require access to macOS graphics services; a restricted headless sandbox can return empty image buffers. The suite also opens a temporary WebKit window with generated frames to measure preview throughput under slow detection; it does not open the camera or use learner data. The suite checks:
 
 - All 18 rendered move permutations against the cubie model (972 sticker checks).
 - Algorithm inverse setups, quiz data, daisy petals, Sune orientation, and middle-layer insertion setup.
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
+- HTML escaping: `html`, `escapeHTML` and `raw` escape markup characters, attribute quotes, nested fragments and arrays.
+- Every button route in the interface: navigation, playground, lesson controls, pattern practice, Case Detective, Together Time and scan review, each driven through the page's click handling.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
 - Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
 - Twenty deterministic 25-move scrambles through the general solver; 120 more through the beginner planner, with exact chunk states and all eight milestone objectives checked.
@@ -186,8 +190,12 @@ Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, b
 Sources/CubeClub/CubeSolver.swift          Shared background JavaScriptCore service for both solve modes
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
-  app.js                                  Lessons, practice, scanning and interaction state
-  core.js                                 Beginner curriculum, scan validation, colors and solver guard
+  app.js                                  Shared state, native bridge, navigation, dialogs and button routing
+  home-ui.js                              Clubhouse welcome, mascot and discoveries page
+  lesson-ui.js                            Guided lessons and solves, recall checks and concept questions
+  play-ui.js                              Practice playground
+  scan-ui.js                              Six-face review, manual painting and solver requests
+  core.js                                 Beginner curriculum, scan validation, colors, solver guard and safe HTML helpers
   next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
   next-ui.js                              Diagrams and cross/F2L pattern practice
   quest-lessons.js                         Additional last-layer and speed workshops

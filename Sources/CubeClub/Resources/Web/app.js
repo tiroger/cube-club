@@ -1,158 +1,355 @@
 'use strict';
-const {FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,sampleColor,normalizeProgress}=CubeClubCore;
-const $=s=>document.querySelector(s), icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
-const native=!!window.webkit?.messageHandlers?.native;
-let progress=normalizeProgress({}),route='home',view=null,session=null,playing=false,busy=false,generation=0,requestID=0,worker=null,workerTimer=null,scan=null,lastFrame=null,lastFrameTime=0,modalFocus=null;
-const pending=new Map();
-function bridge(action,data={}) {
-  if(!native)return Promise.resolve({error:'This feature is available in the Mac app.'});
-  return new Promise(resolve=>{const id=++requestID;const timeout=setTimeout(()=>{pending.delete(id);resolve({error:'This is taking a little longer. Please try again.'});},['exportBackup','importBackup'].includes(action)?3600000:90000);pending.set(id,{resolve,timeout});window.webkit.messageHandlers.native.postMessage({action,id,...data});});
+// Screens live in home-, lesson-, play- and scan-ui.js (plus the other *-ui.js
+// files); each handles its own buttons through a *Click function called below.
+// Build markup that includes anything not bundled with the app using html`...`.
+const { FACES, COLORS, COLOR_NAMES, FACE_NAMES, LESSONS, moves, describeMove, validate, sampleColor, normalizeProgress, escapeHTML, html, raw } = CubeClubCore;
+const $ = s => document.querySelector(s), icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const native = !!window.webkit?.messageHandlers?.native;
+let progress = normalizeProgress({}), route = 'home', view = null, session = null, playing = false, busy = false, generation = 0, requestID = 0, worker = null, workerTimer = null, scan = null, lastFrame = null, lastFrameTime = 0, modalFocus = null;
+const pending = new Map();
+function bridge(action, data = {}) {
+  if (!native)
+    return Promise.resolve({ error: 'This feature is available in the Mac app.' });
+  return new Promise(resolve => {
+    const id = ++requestID;
+    const timeout = setTimeout(() => {
+      pending.delete(id);
+      resolve({ error: 'This is taking a little longer. Please try again.' });
+    }, ['exportBackup', 'importBackup'].includes(action) ? 3600000 : 90000);
+    pending.set(id, { resolve, timeout });
+    window.webkit.messageHandlers.native.postMessage({ action, id, ...data });
+  });
 }
-window.nativeResult=(id,result)=>{const p=pending.get(id);if(p){clearTimeout(p.timeout);pending.delete(id);p.resolve(result);}};
-async function save(){
- if(native){const result=await bridge('saveProgress',{value:JSON.stringify(progress)});if(result.error){toast('Could not save on this Mac. Please try again.');return false;}return result.ok===true;}
- try{localStorage.setItem('cubeclub.progress.v1',JSON.stringify(progress));return true;}catch(_){toast('Could not save in this browser. Please try again.');return false;}
+window.nativeResult = (id, result) => {
+  const p = pending.get(id);
+  if (p) {
+    clearTimeout(p.timeout);
+    pending.delete(id);
+    p.resolve(result);
+  }
+};
+async function save() {
+  if (native) {
+    const result = await bridge('saveProgress', { value: JSON.stringify(progress) });
+    if (result.error) {
+      toast('Could not save on this Mac. Please try again.');
+      return false;
+    }
+    return result.ok === true;
+  }
+  try {
+    localStorage.setItem('cubeclub.progress.v1', JSON.stringify(progress));
+    return true;
+  }
+  catch (_) {
+    toast('Could not save in this browser. Please try again.');
+    return false;
+  }
 }
-function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
-function speak(text){if(native)bridge('speak',{text});else if('speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(text));}}
-function stopSpeech(){if(native)bridge('stopSpeech');else window.speechSynthesis?.cancel();}
-function autoSpeak(text){if(progress.voice)speak(text);}
-function updateVoice(){const b=$('#voice-toggle');b.classList.toggle('on',progress.voice);b.setAttribute('aria-label',`Turn read-aloud ${progress.voice?'off':'on'}`);b.setAttribute('aria-pressed',String(progress.voice));syncNativeChrome();}
-function nextLesson(){return Quest.nextLesson(progress);}
-function mascot(){return `<div class="hero-illustration" aria-label="A cheerful illustrated cube waving hello" role="img"><svg viewBox="0 0 410 280"><ellipse cx="224" cy="246" rx="94" ry="10" fill="#b9cdb2" opacity=".4"/><path d="M68 120c-18-20-2-40 18-22" fill="none" stroke="#aec6a4" stroke-width="2" stroke-dasharray="5 6"/><path d="m327 43 5 12 13 3-11 7-1 13-9-10-13 3 7-11-5-12Z" fill="#e9ca71"/><path d="m88 192 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#89ad81"/><circle cx="333" cy="170" r="4" fill="#b6c5a2"/><circle cx="118" cy="53" r="3" fill="#c4bb83"/><path d="m159 212-6 26-15 3m113-30 9 23 17 3" stroke="#477359" stroke-width="8" stroke-linecap="round" fill="none"/><path d="m127 156-21 12-17-15m196-16 25-18 2-19" stroke="#477359" stroke-width="7" stroke-linecap="round" fill="none"/><path d="m309 100-5-12m9 11 5-13" stroke="#477359" stroke-width="4" stroke-linecap="round"/><g transform="rotate(-9 207 144)"><path d="m130 102 92-44 76 41-89 49Z" fill="#fae5a0" stroke="#3d6853" stroke-width="4" stroke-linejoin="round"/><path d="m130 102 79 46v88l-79-45Z" fill="#fff9df" stroke="#3d6853" stroke-width="4" stroke-linejoin="round"/><path d="m209 148 89-49v88l-89 49Z" fill="#77b796" stroke="#3d6853" stroke-width="4" stroke-linejoin="round"/><path d="m160 88 77 45m-45-60 75 44M157 117l92-43m-65 59 89-45M155 117v88m27-73v88m-52-88 79 46m-79-17 79 47M239 132v88m30-105v88m-60-25 89-50m-89 79 89-49" fill="none" stroke="#3d6853" stroke-width="3" opacity=".7"/><ellipse cx="153" cy="157" rx="4" ry="6" fill="#345c49"/><ellipse cx="184" cy="174" rx="4" ry="6" fill="#345c49"/><path d="M161 177q7 13 15 8" fill="none" stroke="#345c49" stroke-width="3" stroke-linecap="round"/><ellipse cx="146" cy="167" rx="6" ry="3" fill="#efb7a1" transform="rotate(27 146 167)"/></g><path d="m82 73 5-10m7 18 12-2" stroke="#92b584" stroke-width="2" stroke-linecap="round"/></svg><span class="hero-caption">a tiny turn goes a long way ↗</span></div>`;}
-function lessonCard(l,index){return questLessonCard(l,index);}
-function home(){const l=nextLesson(),done=progress.completed.length;return `<div class="welcome-row"><div><div class="eyebrow">A GOOD DAY FOR A LITTLE DISCOVERY</div><h1>Hey, curious cuber <em>✦</em></h1><p>Big cube adventures start with one small turn.</p></div><span class="gentle-pill">${icon('sun')}Your pace. Your adventure.</span></div>${savedPlaces()}<section class="hero"><div class="hero-copy"><div class="eyebrow">${icon('spark')} LITTLE MOVES. BIG MAGIC.</div><h2>A whole world.<br><span>In your hands.</span></h2><p>Let’s turn “how does this work?” into<br>“look what I can do!” One fun move at a time.</p><div class="hero-actions"><button class="button primary" data-nav="learn">${icon('play')}${done?'Continue my quest':'Start my adventure'}</button><span class="text-button">Just a few minutes ${icon('sun')}</span></div></div>${mascot()}</section><div class="section-heading"><div><h2>Your next little discoveries</h2><p>A little looking. A little turning. A lot of “aha!”</p></div><button class="text-button" data-nav="learn">See the learning path ${icon('arrow')}</button></div><div class="home-grid">${Quest.lessonsFor(Quest.stageFor(l.id)).slice(0,3).map(lessonCard).join('')}</div><div class="bottom-grid"><div class="camera-banner"><div class="camera-icon">${icon('camera')}</div><div><h3>Got your cube with you?</h3><p>Let’s figure it out together.</p></div><button class="text-button" data-action="scan">Scan my cube ${icon('arrow')}</button></div><div class="progress-card"><div class="progress-ring">${done}/${LESSONS.length}</div><div><h3>${done?'Look how far you’ve come!':'Your adventure is just beginning'}</h3><p>${done?`${done} discoveries made. Every one counts.`:'Your first discovery is waiting for you.'}</p></div></div></div>${questHomeBanner()}${discoveryLinks()}`;}
-function learn(){return questPath();}
-function badgePage(){const n=progress.completed.length;const badges=[['spark','First little discovery','Finish your first mission.',n>=1],['book','Pattern explorer','Explore three different missions.',n>=3],['flag','Whole-cube thinker','Explore every First Solve mission.',Quest.lessonsFor('beginner').every(l=>progress.completed.includes(l.id))],['layers','Pair explorer','Explore all six next-step lessons.',Next.LESSONS.every(l=>progress.completed.includes(l.id))],['search','Pattern spotter','Explore all eight cross and pair cases.',Next.CASES.every(c=>progress.patternPractice[c.id]?.correct>0)],['cube','Hands-on hero','Make 20 turns in the playground.',progress.moves>=20],['star','Curious mind','Answer three discovery questions.',progress.quiz.length>=3],['heart','Cube companion','Finish a guided cube solve.',progress.solves>=1],['search','Case detective','Discover all seven visual clues.',progress.detective.length===Coach.CHALLENGES.length],['team','Better together','Finish a shared pattern round.',progress.teamRounds>=1],['camera','Careful observer','Review all six faces of a guided step.',progress.moveChecks>=1]];return `<div class="page-intro"><div class="eyebrow">LOOK WHAT YOU’RE LEARNING</div><h1>Little discoveries. <em>Big smiles.</em></h1><p>Collect memories of what you’ve learned. Your pace, your discoveries, no lost streaks.</p></div><div class="badge-grid">${badges.map(([i,title,desc,earned])=>`<div class="badge-card ${earned?'':'locked'}"><div class="badge-medal">${icon(i)}</div><h3>${title}</h3><p>${desc}</p><small>${earned?'DISCOVERED ✦':'WAITING TO BE DISCOVERED'}</small></div>`).join('')}</div><div class="empty-note">${progress.completed.length} missions explored · ${progress.moves} playground turns · ${progress.quiz.length} questions discovered. All saved on this Mac.</div>`;}
-function stage(){return `<div><div class="cube-stage"><div class="stage-top"><span>YOUR PRACTICE CUBE</span><button class="icon-button" data-action="homeView" aria-label="Reset cube viewing angle" title="Reset viewing angle">${icon('cube')}</button></div><canvas id="cube-canvas" tabindex="0" role="img" aria-label="Interactive 3D cube. Drag or use arrow keys to look around. Home resets the view."></canvas><div class="stage-bottom"><span>↔ Drag to look around</span><button data-action="labels">${icon('layers')}Face letters</button></div></div><div class="face-legend">${['U','F','R'].map(f=>`<span><i style="background:${COLORS[f]}"></i>${f} = ${FACE_NAMES[f]}</span>`).join('')}<span>Keep your grip the same during moves</span></div><div id="stage-actions"></div></div>`;}
-function turnPad(recall=false){return `<div class="turn-pad"><h3>${recall?'Your turn! Pick the next move.':'Try a turn. What changes?'}</h3><div class="turn-grid">${['','\'','2'].map(s=>FACES.map(f=>`<button data-turn="${f+s}" aria-label="${describeMove(f+s)}" ${busy?'disabled':''}>${f+s}</button>`).join('')).join('')}</div></div>`;}
-function sequencePage(){if(session.teaching)return teachingPage();const l=session.lesson,isSolve=session.type==='solve';return `<div class="lesson-top"><button class="back-link" data-nav="${isSolve?'home':'learn'}">${icon('arrow')}${isSolve?'Back to clubhouse':'Back to learning path'}</button><span class="eyebrow">${isSolve?'GUIDED SOLVE':l.tag.toUpperCase()}</span></div>${pauseControl()}<div class="lesson-layout">${stage()}<div class="lesson-copy"><div class="eyebrow">${icon(isSolve?'camera':l.icon)}${isSolve?'ONE TURN AT A TIME':l.category}</div><h1>${isSolve?'Let’s solve it together.':l.title}</h1><p class="subtitle">${isSolve?'Make the shown turn, then tap “Next move.” Use “Check my last move” to compare it with the camera. Keep yellow up and green in front.':l.goal}</p><div id="sequence-controls"></div><div class="why-panel"><h3>${icon('spark')}${isSolve?'A helper for this exact scramble':'The little “why” behind it'}</h3><p>${isSolve?'This is a verified move-by-move solution for your scanned state. It may mix several techniques. Visit the learning path to learn reusable beginner patterns and how to recognize them.':l.why}</p></div>${isSolve?`<details class="when-panel"><summary>My real cube doesn’t match</summary><p>Pause. Undo the last move on your real cube and use Back here. If you have lost your place, scan again. “Check my last move” compares snapshots you review. It does not continuously track your hands.</p><button class="button secondary" data-action="scan">Scan again</button></details>`:`<details class="when-panel"><summary>When do I use this?</summary><p>${l.when}</p></details><div id="lesson-pieces"></div><div id="recall-pad"></div>`}</div></div>`;}
-function playPage(){return `<div class="page-intro"><div class="eyebrow">NO WRONG TURNS HERE</div><h1>The practice playground <em>✦</em></h1><p>Twist it. Try it. Undo it. This cube is yours to explore.</p></div><div class="lesson-layout">${stage()}<div><div class="why-panel" style="margin-top:0"><h3>${icon('spark')}Meet your cube’s alphabet</h3><p>R = right · L = left · U = top · D = bottom · F = front · B = back.<br>A letter means clockwise, looking straight at that face. An apostrophe (′) means the other way. A 2 means a half turn.</p></div>${turnPad()}<div class="history" id="move-history">Your moves will appear here.</div><div class="status-line" id="play-status"></div><div class="mode-row"><button class="button secondary" data-action="scramble">${icon('swap')}Mix it up</button><button class="button secondary" data-action="resetPlay">Fresh cube</button></div><div class="path-note">${icon('heart')}Try R four times. What do you notice? Centers stay in place, and every piece comes home.</div></div></div>`;}
-function cancelPlayback(){playing=false;generation++;stopSpeech();}
-function navigate(next){if(busy||continuityWorking){toast('Let this little step finish first.');return;}rememberSession();if(route==='timer')timerLeaving();if(next==='patterns'&&!Quest.unlocked(progress,'intermediate')){progress.quest.selected='intermediate';save();next='learn';toast('Cross and pair practice opens in Piece Partners.');}cancelPlayback();busy=false;if(view)view.destroy();view=null;session=null;route=next;render();}
-function render(){
- document.querySelectorAll('[data-nav]').forEach(b=>{b.classList.toggle('active',b.dataset.nav===route || ((route==='lesson'||route==='patterns')&&b.dataset.nav==='learn'));if(b.closest('nav'))b.setAttribute('aria-current',b.classList.contains('active')?'page':'false');});
- $('#breadcrumb').textContent={home:'MY CLUBHOUSE',learn:'LEARNING PATH',play:'PRACTICE PLAYGROUND',badges:'MY DISCOVERIES',lesson:'LEARNING PATH / LET’S PRACTICE',solve:'SOLVE MY CUBE',detective:'CASE DETECTIVE',team:'TOGETHER TIME',patterns:'PIECE PARTNERS / PATTERN PRACTICE',timer:'MY SOLVE TIMER'}[route];
- $('#content').innerHTML=route==='home'?home():route==='learn'?learn():route==='timer'?timerPage():route==='badges'?badgePage():route==='play'?playPage():route==='detective'?detectivePage():route==='team'?teamPage():route==='patterns'?patternPage():sequencePage();
- if(route==='play'){session={type:'play',cube:new Cube(),history:[]};mountCube();$('#stage-actions').innerHTML=`<div class="stage-controls"><button class="button secondary" data-action="undoPlay">${icon('undo')}Undo a turn</button></div>`;updatePlay();}
- else if(route==='lesson'||route==='solve'){mountCube();updateSequence();}
- else if(route==='patterns'&&session?.type==='pattern'){mountCube();view.highlightPieces=session.challenge.focusPieces||Next.LESSONS.find(l=>l.id===session.challenge.lessonID).focusPieces;view.draw();updatePattern();}
- else if(route==='detective'&&session?.type==='detective'){
-  mountCube();view.highlightIndices=session.challenge.kind==='yellow'?[1,3,4,5,7]:session.challenge.kind==='edge'?[7,19]:[8,9,20];view.draw();
-  $('.stage-top span').textContent='TURN THE CUBE. FOLLOW THE CLUES.';updateDetective();
- }else if(route==='team'&&session?.type==='team'){mountCube();$('.stage-top span').textContent='OUR SHARED PRACTICE CUBE';updateTeam();}
- $('.nav-count').textContent=LESSONS.length;updateVoice();window.scrollTo(0,0);
+function toast(message) {
+  $('#toast').textContent = message;
+  $('#toast').classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => $('#toast').classList.remove('show'), 3500);
 }
-
-function mountCube(){view=new CubeView($('#cube-canvas'),session.cube);view.labels=progress.labels;if(session.lesson?.focusPieces)view.highlightPieces=session.lesson.focusPieces;view.draw();}
-function startLesson(id){if(busy||continuityWorking)return;const lesson=LESSONS.find(l=>l.id===id);if(!lesson)return;if(!Quest.canOpen(progress,id)){showLockedLesson(id);return;}rememberSession();if(route==='timer')timerLeaving();cancelPlayback();busy=false;view?.destroy();route='lesson';progress.quest.selected=Quest.stageFor(id);progress.learningLevel=lesson.level==='next'?'next':'beginner';save();const algorithm=moves(lesson.algorithm),initial=CubeClubCore.lessonInitial(lesson);session={type:'lesson',lesson,algorithm,initial:initial.clone(),cube:initial,index:0,mode:'guide',attempt:{turns:0,assisted:false}};render();rememberSession();autoSpeak(lesson.goal);}
-function updateSequence(){if(!session||!['lesson','solve'].includes(session.type))return;const pauseButton=$('[data-action="pauseSession"]');if(pauseButton)pauseButton.disabled=busy;if(session.teaching){updateTeaching();return;}const {index,algorithm,mode}=session,done=index===algorithm.length,recall=mode==='recall'||mode==='check';$('#sequence-controls').innerHTML=`${session.type==='lesson'?lessonMasteryPanel(session.lesson):''}<div class="algorithm" aria-label="Algorithm">${algorithm.map((m,i)=>`<span class="move-chip ${i<index?'past':i===index?'current':''} ${recall&&i>=index?'hidden-move':''}">${recall&&i>=index?'?':m.replace("'",'′')}</span>`).join('')}</div><div class="instruction-card" aria-live="polite"><div class="step-number">${done?'NICE WORK!':`MOVE ${index+1} OF ${algorithm.length}`}</div><h3>${done?'You put the pattern together!':recall?'What comes next?':describeMove(algorithm[index])}</h3><p>${done?(session.lesson?.finish||'Little moves add up. Ready to try it again?'):recall?(mode==='check'?'Choose each move yourself. Hints are welcome, but a hinted check needs a fresh attempt for mastery.':'Choose a move below. A hint is always here if you need it.'):session.type==='solve'?'Make this turn on your cube, then continue. Clockwise is viewed directly from the face you are turning.':session.lesson.steps?.[index]||session.lesson.hint}</p></div>${session.type==='lesson'?`<div class="mode-row"><button class="mode-pill ${!recall?'active':''}" data-mode="guide">Show me how</button><button class="mode-pill ${mode==='recall'?'active':''}" data-mode="recall">Practice from memory</button><button class="mode-pill ${mode==='check'?'active':''}" data-mode="check">Check myself</button><button class="text-button" data-action="hint">${icon('spark')}Hint</button></div>`:''}`;
-$('#stage-actions').innerHTML=`<div class="stage-controls"><button class="button secondary" data-action="backMove" ${index===0||busy?'disabled':''} aria-label="Previous move">${icon('undo')}Back</button><button class="button primary" data-action="${done?'replay':playing?'pause':recall?'hint':'nextMove'}" ${busy&&!playing?'disabled':''}>${icon(done?'undo':playing?'pause':'play')}${done?'Try again':playing?'Pause':recall?'Give me a hint':'Next move'}</button>${session.type==='lesson'&&!recall&&!done?`<button class="icon-button" data-action="autoplay" aria-label="${playing?'Pause autoplay':'Watch the full pattern'}" title="Watch the full pattern">${icon(playing?'pause':'play')}</button>`:''}<button class="icon-button" data-action="readStep" aria-label="Read instruction aloud">${icon('sound')}</button></div>`;
-if(session.type==='solve')$('#stage-actions').insertAdjacentHTML('beforeend',`<div class="check-step-button"><button class="button secondary" data-action="checkMove" ${index===0||busy?'disabled':''}>${icon('camera')}Check my last move${index>0?' · '+algorithm[index-1].replace("'",'′'):''}</button><p class="small-note">${index>0?'Compare the turn you just completed.':'Follow the first move to unlock a camera check.'}</p></div>`);
-if($('#lesson-pieces')&&(session.lesson?.focusPieces||session.lesson?.questStage)){const mapOpen=$('#lesson-pieces .piece-map')?.open;$('#lesson-pieces').innerHTML=session.lesson.focusPieces?lessonPiecePanel():lessonCasePanel();$('#lesson-pieces .piece-map').open=!!mapOpen;}
-if($('#recall-pad'))$('#recall-pad').innerHTML=recall&&!done?turnPad(true):'';
-if(session.type==='lesson')document.querySelectorAll('.lesson-copy>.why-panel,.lesson-copy>.when-panel').forEach(el=>el.hidden=mode==='check');
+function speak(text) {
+  if (native)
+    bridge('speak', { text });
+  else if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  }
 }
-async function nextMove(source='guide'){if(session?.teaching&&teachingCheckpoint())return;if(busy||!session||!['lesson','solve'].includes(session.type)||session.index>=session.algorithm.length)return;if(session.type==='lesson'&&session.mode!=='guide'&&source!=='recall')return;busy=true;const current=session,token=generation,move=current.algorithm[current.index];updateSequence();autoSpeak(describeMove(move));await view.turn(move,turnDuration());if(current!==session)return;if(token!==generation){busy=false;return;}current.index++;if(current.type==='lesson')current.attempt.turns++;busy=false;updateSequence();rememberSession();if(current.teaching)return;if(current.index===current.algorithm.length){playing=false;if(current.type==='lesson'){Quest.finishAttempt(progress,current.lesson.id,{...current.attempt,mode:current.mode,complete:true,solved:CubeClubCore.lessonComplete(current.lesson,current.cube)});rememberSession(true);completion(current.lesson);}else if(current.cube.isSolved()){if(!current.credited){progress.solves++;current.credited=true;rememberSession(true);}showModal(`<div class="completion"><div class="big-star">✦</div><h2>You brought it home!</h2><p>The cube on screen is solved! Check your real cube’s six faces to see that they match, too.</p><button class="button primary" data-action="checkMove">Check my last move ${icon('camera')}</button><button class="button secondary" data-action="closeModal">Look at my cube</button><button class="button secondary" data-action="learnAfterSolve">Learn the patterns</button></div>`,'small-modal');}}}
-async function autoplay(){if(session?.teaching)return;if(session?.type==='lesson'&&session.mode!=='guide')return;if(busy&&!playing)return;if(playing){playing=false;updateSequence();return;}playing=true;const current=session,token=generation;while(playing&&session===current&&generation===token&&current.index<current.algorithm.length){await nextMove();if(playing)await new Promise(r=>setTimeout(r,progress.slow?1000:500));}playing=false;if(session===current)updateSequence();}
-async function backMove(){if(busy||!session||session.index===0)return;markAssisted();playing=false;busy=true;const current=session;const index=--current.index;if(current.teaching)current.checkpoints=new Set([...current.checkpoints].filter(id=>current.teaching.stages.find(s=>s.id===id).end<index));if(current.type==='lesson')current.attempt.turns=Math.max(0,current.attempt.turns-1);updateSequence();await view.turn(Cube.inverse(current.algorithm[index]),turnDuration(550,250));if(session===current){busy=false;updateSequence();await rememberSession();}}
-function replay(mode){if(busy)return;cancelPlayback();if(session.teaching)session.checkpoints=new Set();session.index=0;session.mode=mode||session.mode;session.attempt={turns:0,assisted:false};session.cube=session.initial.clone();view.setCube(session.cube);updateSequence();rememberSession();}
-function completion(l){questCompletion(l);}
-function updatePlay(){if(session?.type!=='play')return;$('#move-history').textContent=session.history.slice(-24).join('  ')||'Your moves will appear here.';$('#play-status').textContent=session.cube.isSolved()?'Every piece is home. Try a new pattern!':`${session.history.length} turns explored. Undo is always here.`;const undo=$('[data-action="undoPlay"]');if(undo)undo.disabled=!session.history.length||busy;}
-async function playTurn(move){if(busy)return;if(session?.type==='lesson'&&['recall','check'].includes(session.mode)){const expected=session.algorithm[session.index];if(session.index>=session.algorithm.length)return;if(move!==expected){markAssisted();toast('Good try! Think about the next face, or ask for a hint.');autoSpeak('Good try. Take a look at the hint.');return;}await nextMove('recall');return;}if(session?.type!=='play')return;busy=true;const current=session;autoSpeak(describeMove(move));await view.turn(move,turnDuration(650,250));if(current!==session)return;current.history.push(move);progress.moves++;busy=false;save();updatePlay();}
-function showModal(html,cls='',label=''){
- const open=!$('#overlay').hidden,active=document.activeElement;
- const scrollPosition=$('#overlay .modal')?.scrollTop||0;
- const key=open&&$('#overlay').contains(active)?['action','color','sticker','scanFace'].find(k=>active.dataset?.[k]!==undefined):null;
- const value=key?active.dataset[key]:null;
- if(!open)modalFocus=active;
- $('#overlay').innerHTML=`<section class="modal ${cls}" role="dialog" aria-modal="true" aria-label="${label||(cls==='small-modal'?'Cube Club discovery':'Scan your cube')}">${html}</section>`;
- $('#overlay').hidden=false;$('.app-shell').inert=true;
- const controls=[...$('#overlay').querySelectorAll('button:not(:disabled),input')];
- (controls.find(el=>key&&el.dataset[key]===value)||(value==='teachCenter'?$('#color-teaching summary'):null)||controls[0])?.focus({preventScroll:true});
- if(open)$('#overlay .modal').scrollTop=scrollPosition;
- syncNativeChrome();
+function stopSpeech() {
+  if (native)
+    bridge('stopSpeech');
+  else
+    window.speechSynthesis?.cancel();
 }
-
-function closeModal(){if(continuityWorking)return;resumePending=null;restorePending=null;resetIntent=null;parentIntent=null;questChallenge=null;if(scan){if(native)bridge('cameraStop');scan=null;lastFrame=null;lastFrameTime=0;}$('.app-shell').inert=false;$('#overlay').hidden=true;$('#overlay').innerHTML='';modalFocus?.focus();syncNativeChrome();}
-
-const scanOrder=['F','R','B','L','U','D'];
-function newScan(){if(busy){toast('Let this little turn finish, then open the scanner.');return;}cancelPlayback();if(session&&session.type!=='play')updateSequence();scan={autoCapture:progress.preferences.autoCapture,method:'beginner',index:0,faces:Object.fromEntries(FACES.map(f=>[f,Array.from({length:9},(_,i)=>i===4?f:'?')])),confirmed:new Set(),color:'F',camera:false,solving:false};renderScan();}
-function scanOrientation(f){return f==='U'?'Point the yellow center at the camera. Keep the blue center at the TOP edge.':f==='D'?'Point the white center at the camera. Keep the green center at the TOP edge.':`Point the ${COLOR_NAMES[f]} center at the camera. Keep the yellow center at the TOP edge.`;}
-function renderScan(){if(!scan)return;if(scan.mode==='check'){renderMoveCheck();return;}const f=scanOrder[scan.index];showModal(`<div class="modal-title"><div><div class="eyebrow">BRING YOUR REAL CUBE ALONG</div><h2>Six sides. One little adventure.</h2><p>Turn the whole cube for each picture. Keep its layers still until all six faces are checked. You can also paint the colors by hand.</p></div><button class="icon-button" data-action="closeModal" aria-label="Close scanner">${icon('close')}</button></div><div class="scan-steps">${scanOrder.map((face,i)=>`<button class="scan-step ${scan.index===i?'active':''} ${scan.confirmed.has(face)?'done':''}" data-scan-face="${i}">${COLOR_NAMES[face]}</button>`).join('')}</div>${scanMethodPicker()}<div class="scan-columns"><div>${cameraPanel()}<p class="small-note">Standard color layout: yellow top, green front, orange right.<br>The preview is not mirrored. Check every suggested color.</p></div><div class="scan-side"><h3>Face ${scan.index+1}: ${COLOR_NAMES[f]} center</h3>${scanOrientationGuide(f)}<div class="scan-grid">${scan.faces[f].map((c,i)=>`<button class="scan-sticker ${i===4?'center':''}" data-sticker="${i}" style="background:${COLORS[c]||'#e4e7dc'}" aria-label="Row ${Math.floor(i/3)+1}, column ${i%3+1}: ${COLOR_NAMES[c]||'unknown'}${i===4?', fixed center':''}" ${i===4?'disabled':''}>${c==='?'?'?':i===4?'•':''}</button>`).join('')}</div><div class="palette" aria-label="Paint color">${FACES.map(c=>`<button class="swatch ${c===scan.color?'selected':''}" style="background:${COLORS[c]}" data-color="${c}" aria-label="Paint ${COLOR_NAMES[c]}" aria-pressed="${c===scan.color}"></button>`).join('')}</div><p style="text-align:center;margin-top:13px">Pick a color, then tap a square to fix it.</p><div class="mode-row"><button class="text-button" data-action="rotateScan">↻ Rotate this face</button><button class="text-button" data-action="clearScanFace">Clear face</button></div></div></div><div id="scan-error" class="scan-error" role="status"></div><div class="scan-footer"><p>${scan.confirmed.size} of 6 faces checked.<br>Review the colors before moving on.</p><div style="display:flex;gap:10px"><button class="button secondary" data-action="confirmFace">${icon('check')}Colors look right</button><button class="button primary" data-action="solveScan" ${scan.confirmed.size===6?'':'disabled'}>${scan.method==='general'?'Show me the moves':'Teach me to solve'} ${icon('arrow')}</button></div></div>`);refreshCameraPanel();}
-async function solveFacelets(facelets,method='general'){if(native)return bridge('solve',{facelets,method});if(!worker)worker=new Worker('solver-worker.js');return new Promise(resolve=>{const id=++requestID;clearTimeout(workerTimer);workerTimer=setTimeout(()=>{worker?.terminate();worker=null;resolve({error:'The solver timed out. Please try again.'});},90000);worker.onmessage=e=>{if(e.data.id===id){clearTimeout(workerTimer);resolve(e.data);}};worker.onerror=()=>{clearTimeout(workerTimer);worker.terminate();worker=null;resolve({error:'Could not start the solver. Try the native Mac app.'});};worker.postMessage({id,facelets,method});});}
-async function solveScan(){if(!scan||scan.solving)return;const facelets=FACES.map(f=>scan.faces[f].join('')).join(''),check=validate(facelets);if(!check.ok){$('#scan-error').textContent=check.error;return;}if(check.cube.isSolved()){$('#scan-error').textContent='Your cube is already solved! Try a sample cube, or celebrate and explore a lesson.';return;}scan.solving=true;const current=scan;$('#scan-error').innerHTML='<span class="solving-status"><span class="spinner"></span>Finding your cube’s path home. The first solve can take a few seconds…</span>';document.querySelectorAll('.modal button:not(.close)').forEach(b=>b.disabled=true);$('[data-action="closeModal"]').disabled=false;const result=await solveFacelets(facelets,current.method||'beginner');if(scan!==current)return;if(result.error){scan.solving=false;renderScan();$('#scan-error').textContent=result.error;return;}const cube=Cube.fromString(facelets),algorithm=moves(result.algorithm||'');if(!cube.clone().move(algorithm.join(' ')).isSolved()){scan.solving=false;renderScan();$('#scan-error').textContent='The solution did not check out. Please review the scan.';return;}rememberSession();closeModal();cancelPlayback();view?.destroy();busy=false;route='solve';session={type:'solve',cube,initial:cube.clone(),algorithm,index:0,mode:'guide',teaching:result.method==='beginner'?result:null,checkpoints:new Set()};render();rememberSession();autoSpeak('Keep yellow on top and green facing you. Let’s take it one move at a time.');}
-function editScan(action){if(!scan||scan.solving)return;action();renderScan();}
-document.addEventListener('click',async e=>{
- const button=e.target.closest('button,a');if(!button||button.disabled)return;
- if(button.matches('a.brand')){e.preventDefault();navigate('home');return;}
- const d=button.dataset;
- if(continuityWorking)return;
- if(await continuityClick(d))return;
- if(await teachingClick(d))return;
- if(await settingsClick(d))return;
- if(await questClick(d))return;
- if(d.learningLevel){progress.learningLevel=d.learningLevel==='next'?'next':'beginner';progress.quest.selected=d.learningLevel==='next'?'intermediate':'beginner';save();navigate('learn');return;}
- if(d.pattern){startPattern(d.pattern);return;}
- if(d.patternAnswer!==undefined){answerPattern(Number(d.patternAnswer));return;}
- if(d.nav){navigate(d.nav);return;}
- if(d.challenge){startChallenge(d.challenge);return;}
- if(d.clueAnswer!==undefined){answerClue(Number(d.clueAnswer));return;}
- if(d.teamLesson){startTeam(d.teamLesson);return;}
- if(d.teamTurn){await makeTeamTurn(d.teamTurn);return;}
- if(d.lesson){startLesson(d.lesson);return;}
- if(d.turn){await playTurn(d.turn);return;}
- if(d.mode){questStartMode(d.mode);return;}
- if(d.answer!==undefined){const l=session?.lesson;if(!l)return;const correct=Quest.answerConcept(progress,l.id,Number(d.answer));if(correct){rememberSession(true);questCompletion(l);}else{button.classList.add('wrong');$('#quiz-feedback').textContent='Take another look and try again. You can revisit the explanation in the lesson.';}return;}
- if(d.scanFace!==undefined){editScan(()=>scan.index=Number(d.scanFace));return;}
- if(d.color){editScan(()=>scan.color=d.color);return;}
- if(d.sticker!==undefined){lockCameraFace();editScan(()=>{const f=scanOrder[scan.index];scan.faces[f][Number(d.sticker)]=scan.color;scan.confirmed.delete(f);});return;}
- switch(d.action){
- case 'reviewPatterns':{const ids=Next.reviewOrder(progress.patternPractice).filter(c=>Quest.canOpen(progress,c.lessonID)).slice(0,3).map(c=>c.id);if(!ids.length){toast('Open a matching Piece Partners lesson first.');break;}startPattern(ids[0],{ids,index:0});break;}
- case 'patternHint':if(session?.type==='pattern'){session.feedback=session.challenge.hint;updatePattern();autoSpeak(session.feedback);}break;
- case 'readPattern':if(session?.type==='pattern')speak(session.challenge.question+' '+session.challenge.choices.join('. '));break;
- case 'nextPattern':advancePattern();break;
- case 'scan':newScan();break;
- case 'closeModal':closeModal();break;
- case 'checkMove':startMoveCheck();break;
- case 'checkAnotherFace':if(scan?.mode==='check'){const f=checkReport().nextFace;if(f){scan.index=scanOrder.indexOf(f);renderScan();}}break;
- case 'restartCheck':startMoveCheck();break;
- case 'rescanAfterCheck':closeModal();newScan();break;
- case 'stopCamera':stopCubeCamera();break;
- case 'teachCenter':await teachCameraCenter();break;
- case 'clueHint':if(session?.type==='detective'){session.feedback=session.challenge.hint;updateDetective();autoSpeak(session.feedback);}break;
- case 'readClue':if(session?.type==='detective')speak(session.challenge.question+' '+session.challenge.choices.join('. '));break;
- case 'nextChallenge':if(session?.type==='detective'&&session.solved){const i=Coach.CHALLENGES.indexOf(session.challenge);if(i+1<Coach.CHALLENGES.length)startChallenge(Coach.CHALLENGES[i+1].id);else navigate('badges');}break;
- case 'revealTeamMove':if(session?.type==='team'&&!busy){session.round=Coach.teamTransition(session.round,'reveal');session.feedback='';updateTeam();autoSpeak(describeMove(session.round.algorithm[session.round.index]));}break;
- case 'teamDiscussed':if(session?.type==='team'&&!busy){session.round=Coach.teamTransition(session.round,'discussed');session.feedback='';if(session.round.finished&&!session.credited){session.credited=true;progress.teamRounds++;save();autoSpeak('You learned something together. Nice teamwork!');}updateTeam();}break;
- case 'swapTeamRoles':if(session?.type==='team'&&!busy){session.round=Coach.teamTransition(session.round,'swap');updateTeam();}break;
- case 'readTeam':if(session?.type==='team'){const r=session.round,roles=Coach.teamRoles(r.index,r.childFirst);speak(r.finished?'You finished your shared pattern!':`${roles.caller} calls. ${roles.turner} turns. `+(r.phase==='predict'?'Reveal the move, then predict together before turning.':r.phase==='turn'?describeMove(r.algorithm[r.index]):'Tell each other what changed and what stayed the same.'));}break;
- case 'settings':settings();break;
- case 'toggleVoice':progress.voice=!progress.voice;save();updateVoice();if(progress.voice)speak('Hi, curious cuber. Let’s learn one move at a time.');else stopSpeech();break;
- case 'homeView':view?.home();break;
- case 'labels':progress.labels=!progress.labels;if(view){view.labels=progress.labels;view.draw();}save();break;
- case 'nextMove':await nextMove();break;
- case 'backMove':await backMove();break;
- case 'autoplay':autoplay();break;
- case 'pause':playing=false;updateSequence();break;
- case 'replay':replay();break;
- case 'hint':{markAssisted();const text=session?.index<session?.algorithm.length?`${session.algorithm[session.index]}: ${describeMove(session.algorithm[session.index])}`:'You know the whole pattern!';toast(text);speak(text);break;}
- case 'readStep':markAssisted();speak(session?.index<session?.algorithm.length?describeMove(session.algorithm[session.index]):'You did it!');break;
- case 'nextLesson':{const index=LESSONS.findIndex(l=>l.id===session?.lesson?.id);closeModal();if(index===LESSONS.length-1)navigate('badges');else startLesson(LESSONS[index+1].id);break;}
- case 'learnAfterSolve':closeModal();navigate('learn');break;
- case 'undoPlay':if(!busy&&session?.history?.length){busy=true;const current=session;await view.turn(Cube.inverse(current.history.pop()),turnDuration(600,250));if(current===session){busy=false;updatePlay();}}break;
- case 'resetPlay':if(!busy&&session?.type==='play'){session.cube=new Cube();session.history=[];view.setCube(session.cube);updatePlay();}break;
- case 'scramble':if(!busy&&session?.type==='play'){const alg=[];let last='';for(let i=0;i<20;i++){const choices=FACES.filter(f=>f!==last);last=choices[Math.floor(Math.random()*choices.length)];alg.push(last+['',"'",'2'][Math.floor(Math.random()*3)]);}session.cube.move(alg.join(' '));session.history.push(...alg);view.draw();updatePlay();toast('A fresh puzzle! Try a few turns, then undo to explore.');}break;
- case 'startCamera':await startCubeCamera(button);break;
- case 'captureFace':captureFace(false);break;
- case 'confirmFace':if(scan&&!scan.solving){const f=scanOrder[scan.index];if(scan.faces[f].includes('?')){$('#scan-error').textContent='Fill in every square on this face first.';break;}scan.confirmed.add(f);if(scan.mode==='check'){creditMoveCheck();renderScan();break;}const next=scanOrder.findIndex((f,i)=>i>scan.index&&!scan.confirmed.has(f));scan.index=next>=0?next:scanOrder.findIndex(f=>!scan.confirmed.has(f));if(scan.index<0)scan.index=5;renderScan();}break;
- case 'demoScan':editScan(()=>{const s=new Cube().move("R U F2 L' D B R2 U' F D2").asString();FACES.forEach((f,i)=>scan.faces[f]=s.slice(i*9,i*9+9).split(''));scan.confirmed=new Set(FACES);scan.index=0;});toast('Sample cube loaded. All six faces are ready.');break;
- case 'solveScan':await solveScan();break;
- case 'rotateScan':lockCameraFace();editScan(()=>{const f=scanOrder[scan.index],a=scan.faces[f];scan.faces[f]=[a[6],a[3],a[0],a[7],a[4],a[1],a[8],a[5],a[2]];scan.confirmed.delete(f);});break;
- case 'clearScanFace':lockCameraFace();editScan(()=>{const f=scanOrder[scan.index];scan.faces[f]=Array.from({length:9},(_,i)=>i===4?f:'?');scan.confirmed.delete(f);});break;
-
- }
+function autoSpeak(text) {
+  if (progress.voice)
+    speak(text);
+}
+function updateVoice() {
+  const b = $('#voice-toggle');
+  b.classList.toggle('on', progress.voice);
+  b.setAttribute('aria-label', `Turn read-aloud ${progress.voice ? 'off' : 'on'}`);
+  b.setAttribute('aria-pressed', String(progress.voice));
+  syncNativeChrome();
+}
+function nextLesson() {
+  return Quest.nextLesson(progress);
+}
+function stage() {
+  return `<div><div class="cube-stage"><div class="stage-top"><span>YOUR PRACTICE CUBE</span><button class="icon-button" data-action="homeView" aria-label="Reset cube viewing angle" title="Reset viewing angle">${icon('cube')}</button></div><canvas id="cube-canvas" tabindex="0" role="img" aria-label="Interactive 3D cube. Drag or use arrow keys to look around. Home resets the view."></canvas><div class="stage-bottom"><span>↔ Drag to look around</span><button data-action="labels">${icon('layers')}Face letters</button></div></div><div class="face-legend">${['U', 'F', 'R'].map(f => `<span><i style="background:${COLORS[f]}"></i>${f} = ${FACE_NAMES[f]}</span>`).join('')}<span>Keep your grip the same during moves</span></div><div id="stage-actions"></div></div>`;
+}
+function turnPad(recall = false) {
+  return `<div class="turn-pad"><h3>${recall ? 'Your turn! Pick the next move.' : 'Try a turn. What changes?'}</h3><div class="turn-grid">${['', '\'', '2'].map(s => FACES.map(f => `<button data-turn="${f + s}" aria-label="${describeMove(f + s)}" ${busy ? 'disabled' : ''}>${f + s}</button>`).join('')).join('')}</div></div>`;
+}
+function cancelPlayback() {
+  playing = false;
+  generation++;
+  stopSpeech();
+}
+function navigate(next) {
+  if (busy || continuityWorking) {
+    toast('Let this little step finish first.');
+    return;
+  }
+  rememberSession();
+  if (route === 'timer')
+    timerLeaving();
+  if (next === 'patterns' && !Quest.unlocked(progress, 'intermediate')) {
+    progress.quest.selected = 'intermediate';
+    save();
+    next = 'learn';
+    toast('Cross and pair practice opens in Piece Partners.');
+  }
+  cancelPlayback();
+  busy = false;
+  if (view)
+    view.destroy();
+  view = null;
+  session = null;
+  route = next;
+  render();
+}
+function render() {
+  document.querySelectorAll('[data-nav]').forEach(b => {
+    b.classList.toggle('active', b.dataset.nav === route || ((route === 'lesson' || route === 'patterns') && b.dataset.nav === 'learn'));
+    if (b.closest('nav'))
+      b.setAttribute('aria-current', b.classList.contains('active') ? 'page' : 'false');
+  });
+  $('#breadcrumb').textContent = { home: 'MY CLUBHOUSE', learn: 'LEARNING PATH', play: 'PRACTICE PLAYGROUND', badges: 'MY DISCOVERIES', lesson: 'LEARNING PATH / LET’S PRACTICE', solve: 'SOLVE MY CUBE', detective: 'CASE DETECTIVE', team: 'TOGETHER TIME', patterns: 'PIECE PARTNERS / PATTERN PRACTICE', timer: 'MY SOLVE TIMER' }[route];
+  $('#content').innerHTML = route === 'home' ? home() : route === 'learn' ? learn() : route === 'timer' ? timerPage() : route === 'badges' ? badgePage() : route === 'play' ? playPage() : route === 'detective' ? detectivePage() : route === 'team' ? teamPage() : route === 'patterns' ? patternPage() : sequencePage();
+  if (route === 'play') {
+    session = { type: 'play', cube: new Cube(), history: [] };
+    mountCube();
+    $('#stage-actions').innerHTML = `<div class="stage-controls"><button class="button secondary" data-action="undoPlay">${icon('undo')}Undo a turn</button></div>`;
+    updatePlay();
+  }
+  else if (route === 'lesson' || route === 'solve') {
+    mountCube();
+    updateSequence();
+  }
+  else if (route === 'patterns' && session?.type === 'pattern') {
+    mountCube();
+    view.highlightPieces = session.challenge.focusPieces || Next.LESSONS.find(l => l.id === session.challenge.lessonID).focusPieces;
+    view.draw();
+    updatePattern();
+  }
+  else if (route === 'detective' && session?.type === 'detective') {
+    mountCube();
+    view.highlightIndices = session.challenge.kind === 'yellow' ? [1, 3, 4, 5, 7] : session.challenge.kind === 'edge' ? [7, 19] : [8, 9, 20];
+    view.draw();
+    $('.stage-top span').textContent = 'TURN THE CUBE. FOLLOW THE CLUES.';
+    updateDetective();
+  }
+  else if (route === 'team' && session?.type === 'team') {
+    mountCube();
+    $('.stage-top span').textContent = 'OUR SHARED PRACTICE CUBE';
+    updateTeam();
+  }
+  $('.nav-count').textContent = LESSONS.length;
+  updateVoice();
+  window.scrollTo(0, 0);
+}
+function mountCube() {
+  view = new CubeView($('#cube-canvas'), session.cube);
+  view.labels = progress.labels;
+  if (session.lesson?.focusPieces)
+    view.highlightPieces = session.lesson.focusPieces;
+  view.draw();
+}
+function showModal(html, cls = '', label = '') {
+  const open = !$('#overlay').hidden, active = document.activeElement;
+  const scrollPosition = $('#overlay .modal')?.scrollTop || 0;
+  const key = open && $('#overlay').contains(active) ? ['action', 'color', 'sticker', 'scanFace'].find(k => active.dataset?.[k] !== undefined) : null;
+  const value = key ? active.dataset[key] : null;
+  if (!open)
+    modalFocus = active;
+  $('#overlay').innerHTML = `<section class="modal ${cls}" role="dialog" aria-modal="true" aria-label="${label || (cls === 'small-modal' ? 'Cube Club discovery' : 'Scan your cube')}">${html}</section>`;
+  $('#overlay').hidden = false;
+  $('.app-shell').inert = true;
+  const controls = [...$('#overlay').querySelectorAll('button:not(:disabled),input')];
+  (controls.find(el => key && el.dataset[key] === value) || (value === 'teachCenter' ? $('#color-teaching summary') : null) || controls[0])?.focus({ preventScroll: true });
+  if (open)
+    $('#overlay .modal').scrollTop = scrollPosition;
+  syncNativeChrome();
+}
+function closeModal() {
+  if (continuityWorking)
+    return;
+  resumePending = null;
+  restorePending = null;
+  resetIntent = null;
+  parentIntent = null;
+  questChallenge = null;
+  if (scan) {
+    if (native)
+      bridge('cameraStop');
+    scan = null;
+    lastFrame = null;
+    lastFrameTime = 0;
+  }
+  $('.app-shell').inert = false;
+  $('#overlay').hidden = true;
+  $('#overlay').innerHTML = '';
+  modalFocus?.focus();
+  syncNativeChrome();
+}
+document.addEventListener('click', async (e) => {
+  const button = e.target.closest('button,a');
+  if (!button || button.disabled)
+    return;
+  if (button.matches('a.brand')) {
+    e.preventDefault();
+    navigate('home');
+    return;
+  }
+  const d = button.dataset;
+  if (continuityWorking)
+    return;
+  if (await continuityClick(d))
+    return;
+  if (await teachingClick(d))
+    return;
+  if (await settingsClick(d))
+    return;
+  if (await questClick(d))
+    return;
+  if (d.learningLevel) {
+    progress.learningLevel = d.learningLevel === 'next' ? 'next' : 'beginner';
+    progress.quest.selected = d.learningLevel === 'next' ? 'intermediate' : 'beginner';
+    save();
+    navigate('learn');
+    return;
+  }
+  if (d.nav) {
+    navigate(d.nav);
+    return;
+  }
+  if (await patternClick(d))
+    return;
+  if (await coachClick(d))
+    return;
+  if (await lessonClick(d, button))
+    return;
+  if (await playClick(d))
+    return;
+  if (await scanClick(d, button))
+    return;
+  switch (d.action) {
+    case 'closeModal':
+      closeModal();
+      break;
+    case 'settings':
+      settings();
+      break;
+    case 'toggleVoice':
+      progress.voice = !progress.voice;
+      save();
+      updateVoice();
+      if (progress.voice)
+        speak('Hi, curious cuber. Let’s learn one move at a time.');
+      else
+        stopSpeech();
+      break;
+    case 'homeView':
+      view?.home();
+      break;
+    case 'labels':
+      progress.labels = !progress.labels;
+      if (view) {
+        view.labels = progress.labels;
+        view.draw();
+      }
+      save();
+      break;
+  }
 });
-document.addEventListener('change',e=>{if(continuityWorking)return;if(e.target.id==='restore-acknowledged'){const button=$('[data-action="confirmRestore"]');if(button)button.disabled=!e.target.checked;return;}if(settingsChange(e.target))return;if(e.target.id==='quest-parent'||e.target.id==='quest-observed'){const b=$('[data-action="confirmParent"]');if(b)b.disabled=!$('#quest-parent')?.checked||!$('#quest-observed')?.checked;return;}const key=e.target.dataset.setting;if(key&&['voice','slow','labels'].includes(key)){progress[key]=e.target.checked;save();updateVoice();if(key==='labels'&&view){view.labels=progress.labels;view.draw();}if(key==='voice'&&!progress.voice)stopSpeech();}});
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key===','){e.preventDefault();window.openSettings();return;}if(!$('#overlay').hidden){if(e.key==='Escape'){closeModal();return;}if(e.key==='Tab'){const focusable=[...$('#overlay').querySelectorAll('button:not(:disabled),input,select,summary,[tabindex="0"]')];const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}return;}if(route==='timer'&&e.code==='Space'&&!e.repeat&&!e.target.closest('button,input,select,textarea,a')){e.preventDefault();if(solveTimer.phase==='running')stopSolveTimer();else if(solveTimer.phase==='ready')startSolveTimer();return;}if(e.code==='Space'&&e.target===document.body&&(route==='lesson'||route==='solve')){e.preventDefault();if(playing){playing=false;updateSequence();}else nextMove();}});
-(async()=>{try{const raw=native?(await bridge('loadProgress')).value:localStorage.getItem('cubeclub.progress.v1');progress=normalizeProgress(JSON.parse(raw||'{}'));}catch(_){progress=normalizeProgress({});}cameraPalette=JSON.parse(JSON.stringify(progress.calibration?.colors||{}));applyPreferences();render();})();
+document.addEventListener('change', e => {
+  if (continuityWorking)
+    return;
+  if (e.target.id === 'restore-acknowledged') {
+    const button = $('[data-action="confirmRestore"]');
+    if (button)
+      button.disabled = !e.target.checked;
+    return;
+  }
+  if (settingsChange(e.target))
+    return;
+  if (e.target.id === 'quest-parent' || e.target.id === 'quest-observed') {
+    const b = $('[data-action="confirmParent"]');
+    if (b)
+      b.disabled = !$('#quest-parent')?.checked || !$('#quest-observed')?.checked;
+    return;
+  }
+  const key = e.target.dataset.setting;
+  if (key && ['voice', 'slow', 'labels'].includes(key)) {
+    progress[key] = e.target.checked;
+    save();
+    updateVoice();
+    if (key === 'labels' && view) {
+      view.labels = progress.labels;
+      view.draw();
+    }
+    if (key === 'voice' && !progress.voice)
+      stopSpeech();
+  }
+});
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+    e.preventDefault();
+    window.openSettings();
+    return;
+  }
+  if (!$('#overlay').hidden) {
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = [...$('#overlay').querySelectorAll('button:not(:disabled),input,select,summary,[tabindex="0"]')];
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      }
+      else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    }
+    return;
+  }
+  if (route === 'timer' && e.code === 'Space' && !e.repeat && !e.target.closest('button,input,select,textarea,a')) {
+    e.preventDefault();
+    if (solveTimer.phase === 'running')
+      stopSolveTimer();
+    else if (solveTimer.phase === 'ready')
+      startSolveTimer();
+    return;
+  }
+  if (e.code === 'Space' && e.target === document.body && (route === 'lesson' || route === 'solve')) {
+    e.preventDefault();
+    if (playing) {
+      playing = false;
+      updateSequence();
+    }
+    else
+      nextMove();
+  }
+});
+(async () => {
+  try {
+    const raw = native ? (await bridge('loadProgress')).value : localStorage.getItem('cubeclub.progress.v1');
+    progress = normalizeProgress(JSON.parse(raw || '{}'));
+  }
+  catch (_) {
+    progress = normalizeProgress({});
+  }
+  cameraPalette = JSON.parse(JSON.stringify(progress.calibration?.colors || {}));
+  applyPreferences();
+  render();
+})();

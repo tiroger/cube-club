@@ -93,3 +93,79 @@ function creditMoveCheck(){
  owner.checkedSteps=owner.checkedSteps||new Set();
  if(!owner.checkedSteps.has(scan.check.step)){owner.checkedSteps.add(scan.check.step);progress.moveChecks++;save();}
 }
+// Case detective and Together time controls, dispatched from app.js.
+async function coachClick(d) {
+  if (d.challenge) {
+    startChallenge(d.challenge);
+    return true;
+  }
+  if (d.clueAnswer !== undefined) {
+    answerClue(Number(d.clueAnswer));
+    return true;
+  }
+  if (d.teamLesson) {
+    startTeam(d.teamLesson);
+    return true;
+  }
+  if (d.teamTurn) {
+    await makeTeamTurn(d.teamTurn);
+    return true;
+  }
+  switch (d.action) {
+    case 'clueHint':
+      if (session?.type === 'detective') {
+        session.feedback = session.challenge.hint;
+        updateDetective();
+        autoSpeak(session.feedback);
+      }
+      break;
+    case 'readClue':
+      if (session?.type === 'detective')
+        speak(session.challenge.question + ' ' + session.challenge.choices.join('. '));
+      break;
+    case 'nextChallenge':
+      if (session?.type === 'detective' && session.solved) {
+        const i = Coach.CHALLENGES.indexOf(session.challenge);
+        if (i + 1 < Coach.CHALLENGES.length)
+          startChallenge(Coach.CHALLENGES[i + 1].id);
+        else
+          navigate('badges');
+      }
+      break;
+    case 'revealTeamMove':
+      if (session?.type === 'team' && !busy) {
+        session.round = Coach.teamTransition(session.round, 'reveal');
+        session.feedback = '';
+        updateTeam();
+        autoSpeak(describeMove(session.round.algorithm[session.round.index]));
+      }
+      break;
+    case 'teamDiscussed':
+      if (session?.type === 'team' && !busy) {
+        session.round = Coach.teamTransition(session.round, 'discussed');
+        session.feedback = '';
+        if (session.round.finished && !session.credited) {
+          session.credited = true;
+          progress.teamRounds++;
+          save();
+          autoSpeak('You learned something together. Nice teamwork!');
+        }
+        updateTeam();
+      }
+      break;
+    case 'swapTeamRoles':
+      if (session?.type === 'team' && !busy) {
+        session.round = Coach.teamTransition(session.round, 'swap');
+        updateTeam();
+      }
+      break;
+    case 'readTeam':
+      if (session?.type === 'team') {
+        const r = session.round, roles = Coach.teamRoles(r.index, r.childFirst);
+        speak(r.finished ? 'You finished your shared pattern!' : `${roles.caller} calls. ${roles.turner} turns. ` + (r.phase === 'predict' ? 'Reveal the move, then predict together before turning.' : r.phase === 'turn' ? describeMove(r.algorithm[r.index]) : 'Tell each other what changed and what stayed the same.'));
+      }
+      break;
+    default: return false;
+  }
+  return true;
+}

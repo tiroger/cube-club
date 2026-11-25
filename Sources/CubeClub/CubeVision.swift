@@ -287,7 +287,14 @@ final class CubeVision {
             rows.append([a.x,a.y,1,0,0,0,-b.x*a.x,-b.x*a.y]); values.append(b.x)
             rows.append([0,0,0,a.x,a.y,1,-b.y*a.x,-b.y*a.y]); values.append(b.y)
         }
-        var matrix = (0..<8).map { i in (0..<8).map { j in rows.reduce(CGFloat.zero) { $0+$1[i]*$1[j] } } + [zip(rows,values).reduce(CGFloat.zero) { $0+$1.0[i]*$1.1 }] }
+        // Normal equations [AᵀA | Aᵀb], built with plain loops so the type checker stays fast.
+        var matrix = [[CGFloat]](repeating: [CGFloat](repeating: 0, count: 9), count: 8)
+        for (row, value) in zip(rows, values) {
+            for i in 0..<8 {
+                for j in 0..<8 { matrix[i][j] += row[i] * row[j] }
+                matrix[i][8] += row[i] * value
+            }
+        }
         for col in 0..<8 {
             guard let pivot = (col..<8).max(by: { abs(matrix[$0][col]) < abs(matrix[$1][col]) }), abs(matrix[pivot][col]) > 1e-9 else { return nil }
             matrix.swapAt(col,pivot)

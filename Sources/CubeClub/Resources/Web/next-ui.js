@@ -40,3 +40,41 @@ function advancePattern(){
  if(r){if(r.index+1===r.ids.length){navigate('patterns');toast(r.ids.length+' patterns explored. A little practice counts!');return;}startPattern(r.ids[r.index+1],{...r,index:r.index+1});}
  else{const available=Next.CASES.filter(c=>Quest.canOpen(progress,c.lessonID)),i=available.indexOf(session.challenge);if(i+1===available.length)navigate('patterns');else startPattern(available[i+1].id);}
 }
+// Pattern practice controls, dispatched from app.js.
+async function patternClick(d) {
+  if (d.pattern) {
+    startPattern(d.pattern);
+    return true;
+  }
+  if (d.patternAnswer !== undefined) {
+    answerPattern(Number(d.patternAnswer));
+    return true;
+  }
+  switch (d.action) {
+    case 'reviewPatterns': {
+      const ids = Next.reviewOrder(progress.patternPractice).filter(c => Quest.canOpen(progress, c.lessonID)).slice(0, 3).map(c => c.id);
+      if (!ids.length) {
+        toast('Open a matching Piece Partners lesson first.');
+        break;
+      }
+      startPattern(ids[0], { ids, index: 0 });
+      break;
+    }
+    case 'patternHint':
+      if (session?.type === 'pattern') {
+        session.feedback = session.challenge.hint;
+        updatePattern();
+        autoSpeak(session.feedback);
+      }
+      break;
+    case 'readPattern':
+      if (session?.type === 'pattern')
+        speak(session.challenge.question + ' ' + session.challenge.choices.join('. '));
+      break;
+    case 'nextPattern':
+      advancePattern();
+      break;
+    default: return false;
+  }
+  return true;
+}

@@ -40,8 +40,10 @@ struct VisionTests {
         let png=vision.context.pngRepresentation(of:preview,format:.RGBA8,colorSpace:CGColorSpace(name:CGColorSpace.sRGB)!)!
         let bitmap=NSBitmapImageRep(data:png)!
         for row in 0..<3 { for col in 0..<3 {
-            var observed=[UInt](repeating:0,count:4)
-            bitmap.getPixel(&observed,atX:160+60+col*120,y:90+60+row*120)
+            // Raw samples, as getPixel returns them; getPixel's pointer type differs between SDKs.
+            let x=160+60+col*120,y=90+60+row*120
+            let base=bitmap.bitmapData!+y*bitmap.bytesPerRow+x*bitmap.bitsPerPixel/8
+            let observed=(0..<3).map { base[$0] }
             for c in 0..<3 { check(abs(Double(observed[c])-Double(palette[colors[row*3+col]][c]))<8,"PNG preview orientation row \(row), column \(col)") }
         }}
         for (name,quad) in [("flat",flat),("tilted",tilted),("offcenter",offcenter)] {

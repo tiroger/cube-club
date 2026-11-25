@@ -59,7 +59,35 @@
     const x=input && typeof input==='object'?input:{};
     return {savedSessions:root.CubeClubContinuity?.normalize(x.savedSessions)||{lesson:null,solve:null},calibration:root.CubeClubContinuity?.calibration(x.calibration)||null,preferences:normalizePreferences(x.preferences),quest:root.CubeClubQuest?.normalize(x.quest)||{},learningLevel:x.learningLevel==='next'?'next':'beginner',patternPractice:root.CubeClubNext?.normalizePractice(x.patternPractice)||{},completed:Array.isArray(x.completed)?[...new Set(x.completed.filter(id=>LESSONS.some(l=>l.id===id)))]:[],moves:Number.isFinite(x.moves)?Math.max(0,Math.floor(x.moves)):0,solves:Number.isFinite(x.solves)?Math.max(0,Math.floor(x.solves)):0,quiz:Array.isArray(x.quiz)?[...new Set(x.quiz.filter(id=>LESSONS.some(l=>l.id===id)))]:[],detective:Array.isArray(x.detective)?[...new Set(x.detective.filter(id=>['yellow-line','yellow-elbow','yellow-dot','yellow-cross','edge-right','edge-left','corner-home'].includes(id)))]:[],teamRounds:Number.isFinite(x.teamRounds)?Math.max(0,Math.floor(x.teamRounds)):0,moveChecks:Number.isFinite(x.moveChecks)?Math.max(0,Math.floor(x.moveChecks)):0,voice:!!x.voice,labels:x.labels!==false,slow:x.slow!==false};
   }
-  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,parity,sampleColor,normalizeProgress,normalizePreferences,resetLearningProgress};
+  // Safe HTML building. Inside html`...` every interpolated value is escaped,
+  // except the output of another html`...` and text explicitly marked raw().
+  // Arrays are joined; null, undefined and false render nothing.
+  // Today's templates interpolate only bundled lesson text. Anything a person
+  // types, a file supplies, or the system reports must go through html`...` or
+  // escapeHTML() before it reaches innerHTML.
+  const HTML_ESCAPES={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'};
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"'`]/g, c => HTML_ESCAPES[c]);
+  }
+  class SafeHTML {
+    constructor(text) { this.text = text; }
+    toString() { return this.text; }
+  }
+  function raw(text) {
+    return text instanceof SafeHTML ? text : new SafeHTML(String(text ?? ''));
+  }
+  function htmlPiece(value) {
+    if (value instanceof SafeHTML) return value.text;
+    if (Array.isArray(value)) return value.map(htmlPiece).join('');
+    if (value === null || value === undefined || value === false) return '';
+    return escapeHTML(value);
+  }
+  function html(strings, ...values) {
+    let out = strings[0];
+    for (let i = 0; i < values.length; i++) out += htmlPiece(values[i]) + strings[i + 1];
+    return new SafeHTML(out);
+  }
+  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,parity,sampleColor,normalizeProgress,normalizePreferences,resetLearningProgress,escapeHTML,html,raw};
   let initialized=false;
   root.solveCubeRequest=function(facelets) {
     const check=validate(facelets);

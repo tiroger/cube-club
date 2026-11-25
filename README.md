@@ -121,7 +121,7 @@ Use a standard 3×3 color arrangement: **yellow on top, green in front, orange o
 2. Start by fitting one whole face inside the dashed square in bright, even light. Keep the face toward the camera and fingers behind the edges. The guide can find the nine-square grid even when the outer-edge detector misses it. A solid outline then follows the face; small hand movements and moderate tilt are okay.
 3. For the four side faces, keep the yellow center at the top. For the yellow face, keep the blue center toward the top of the image. For the white face, keep the green center toward the top of the image.
 4. Hold still for about a second. Automatic capture suggests colors when six recent frames provide consistent evidence. A single brief detection miss preserves the hold progress but disables capture until a fresh verified view returns. Repeated misses or a sudden large movement start the hold again. Inspect every square, fix any suggestion with the palette, and choose **Colors look right**. As soon as a real face has an outline, choose **Use this picture** to review a single clear view. This works even while automatic capture is still checking several frames. Unclear stickers stay as question marks; paint those squares, check all nine colors and the face orientation, then confirm. **Use a new picture** deliberately replaces the current suggestions; ongoing video cannot overwrite your corrections.
-5. Check all six faces. Choose **Teach me to solve** for beginner layers and explanations, or select **Just show the moves** and then **Show me the moves** for the general solution. The general solver’s first run builds lookup tables and can take several seconds.
+5. Check all six faces. Choose **Teach me to solve** for beginner layers and explanations, or select **Just show the moves** and then **Show me the moves** for the general solution. The general solver’s first run builds lookup tables, which takes about a second.
 6. Hold yellow up and green toward you. In teaching mode, make the shown turn on your real cube, then choose **I made this turn**. Complete each short sequence. At a milestone, compare the described pieces and optionally use the camera check, then choose **This matches my cube**. Clockwise always means looking straight at the face being turned.
 7. During corner orientation, finish every four-move group and every indicated top turn: the lower layers recover at the end. At completion, check all six faces before celebrating. This records guided practice; it does not unlock lesson mastery, graduation, or the independent-solve timer.
 
@@ -153,12 +153,16 @@ The scan solver uses Kociemba’s two-phase algorithm through cube.js. It finds 
 ./scripts/test.sh
 ```
 
+GitHub Actions runs the same script and a full app build on every push to `main` and every pull request ([workflow](.github/workflows/test.yml)).
+
 Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional package installation. Native image tests require access to macOS graphics services; a restricted headless sandbox can return empty image buffers. The suite also opens a temporary WebKit window with generated frames to measure preview throughput under slow detection; it does not open the camera or use learner data. The suite checks:
 
 - All 18 rendered move permutations against the cubie model (972 sticker checks).
 - Algorithm inverse setups, quiz data, daisy petals, Sune orientation, and middle-layer insertion setup.
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
+- HTML escaping: `html`, `escapeHTML` and `raw` escape markup characters, attribute quotes, nested fragments and arrays.
+- Every button route in the interface: navigation, playground, lesson controls, pattern practice, Case Detective, Together Time and scan review, each driven through the page's click handling.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
 - Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
 - Twenty deterministic 25-move scrambles through the general solver; 120 more through the beginner planner, with exact chunk states and all eight milestone objectives checked.
@@ -186,8 +190,12 @@ Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, b
 Sources/CubeClub/CubeSolver.swift          Shared background JavaScriptCore service for both solve modes
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
-  app.js                                  Lessons, practice, scanning and interaction state
-  core.js                                 Beginner curriculum, scan validation, colors and solver guard
+  app.js                                  Shared state, native bridge, navigation, dialogs and button routing
+  home-ui.js                              Clubhouse welcome, mascot and discoveries page
+  lesson-ui.js                            Guided lessons and solves, recall checks and concept questions
+  play-ui.js                              Practice playground
+  scan-ui.js                              Six-face review, manual painting and solver requests
+  core.js                                 Beginner curriculum, scan validation, colors, solver guard and safe HTML helpers
   next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
   next-ui.js                              Diagrams and cross/F2L pattern practice
   quest-lessons.js                         Additional last-layer and speed workshops

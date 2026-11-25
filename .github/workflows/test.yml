@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # WebKit and Vision tests need a real macOS session; GitHub's macOS runners provide one.
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          swift --version
+
+      - name: Run tests
+        run: ./scripts/test.sh
+
+      # The test scripts compile only the Swift files each suite needs, so build
+      # the whole app too. This is the only step that compiles App.swift.
+      - name: Build the app
+        run: ./scripts/build.sh

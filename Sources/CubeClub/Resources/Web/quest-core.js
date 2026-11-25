@@ -6,10 +6,19 @@
   {id:'beginner',name:'Beginner',title:'First Solve',icon:'flower',color:'yellow',description:'Meet your cube, build the layers, and explain your first solve.',physical:'I watched my child solve a scrambled physical cube without the app’s move-by-move solver, and explain the main steps.'},
   {id:'intermediate',name:'Intermediate',title:'Piece Partners',icon:'team',color:'mint',description:'Plan a direct cross, build F2L pairs, and discover the jobs of the last layer.',physical:'I watched my child build a matching white cross, solve corner-edge pairs, and explain orientation versus permutation on a physical cube.'},
   {id:'advanced',name:'Advanced',title:'Clever Solutions',icon:'spark',color:'peach',description:'Reduce wasted F2L turns and begin a larger PLL toolkit with T and Y cases.',physical:'I watched my child recognize a ready pair, explain the difference between T and Y cases, and practice the matching plans on a physical cube.'},
-  {id:'speed',name:'Speed Solver',title:'Smooth Moves',icon:'flag',color:'lavender',description:'Practice inspection, comfortable finger tricks, and looking ahead. Grow at your own pace.',physical:'I watched an untimed inspection, comfortable-turning and lookahead practice session. My child chose one thing to improve next.'}
+  {id:'speed',name:'Speed Solver',title:'Smooth Moves',icon:'flag',color:'lavender',description:'Practice inspection, comfortable finger tricks, and looking ahead. Grow at your own pace.',physical:'I watched an untimed inspection, comfortable-turning and lookahead practice session. My child chose one thing to improve next.'},
+  // An optional branch: it opens after its starting stage and leads nowhere else.
+  {id:'roux',after:'beginner',name:'Roux',title:'Block Builders',icon:'layers',color:'sky',description:'An optional side path after First Solve. Build a block on each side, solve the top corners, then finish six edges with middle-slice turns.',physical:'I watched my child build both 1×2×3 side blocks on a scrambled physical cube and explain which turns keep the first block safe.'}
  ];
  function stageFor(id){const l=LESSONS.find(l=>l.id===id);return l?(l.questStage||(l.level==='next'?'intermediate':'beginner')):null;}
  function lessonsFor(id){return LESSONS.filter(l=>stageFor(l.id)===id);}
+ // MAIN is the ordered path. A branch names the stage it starts from in after.
+ const MAIN=STAGES.filter(s=>!s.after), stageInfo=id=>STAGES.find(s=>s.id===id);
+ // The stage that must be graduated first: the previous main stage, or a branch's starting stage.
+ function before(id){const s=stageInfo(id);if(!s)return null;return s.after?stageInfo(s.after):MAIN[MAIN.indexOf(s)-1]||null;}
+ // The main-path stage that follows. Branches do not lead to another stage.
+ function after(id){const s=stageInfo(id);return s&&!s.after?MAIN[MAIN.indexOf(s)+1]||null:null;}
+ function branchesFrom(id){return STAGES.filter(s=>s.after===id);}
  const validStage=id=>STAGES.some(s=>s.id===id),list=x=>Array.isArray(x)?[...new Set(x.filter(validStage))]:[];
  function normalize(input){
   const q=input&&typeof input==='object'?input:{},records={};
@@ -19,10 +28,11 @@
  }
  function state(p,id){const r=p.quest?.records?.[id]||{};return {learned:p.completed.includes(id),practiced:r.practiced===true,understood:r.understood===true,independent:r.independent===true};}
  function mastered(p,id){const s=state(p,id);return s.learned&&s.practiced&&s.understood&&s.independent;}
- function granted(p,stage){const i=STAGES.findIndex(s=>s.id===stage);return i>=0&&p.quest.grants.some(id=>STAGES.findIndex(s=>s.id===id)>=i);}
- function unlocked(p,stage){const i=STAGES.findIndex(s=>s.id===stage);return i>=0&&(i===0||granted(p,stage)||p.quest.graduated.includes(stage)||p.quest.graduated.includes(STAGES[i-1].id));}
+ // A main-path grant opens that stage and every earlier main stage. A branch opens only with its own grant.
+ function granted(p,stage){const s=stageInfo(stage);if(!s)return false;if(s.after)return p.quest.grants.includes(stage);const i=MAIN.indexOf(s);return p.quest.grants.some(id=>MAIN.findIndex(m=>m.id===id)>=i);}
+ function unlocked(p,stage){const s=stageInfo(stage);if(!s)return false;const prev=before(stage);return !prev||granted(p,stage)||p.quest.graduated.includes(stage)||p.quest.graduated.includes(prev.id);}
  function canOpen(p,id){const stage=stageFor(id),ls=lessonsFor(stage),i=ls.findIndex(l=>l.id===id);return i>=0&&unlocked(p,stage)&&(i===0||granted(p,stage)||mastered(p,id)||p.quest.graduated.includes(stage)||mastered(p,ls[i-1].id));}
- function lessonRequirement(p,id){const stage=stageFor(id),i=STAGES.findIndex(s=>s.id===stage),ls=lessonsFor(stage),n=ls.findIndex(l=>l.id===id);if(i<0)return 'Choose a lesson from Cube Quest.';if(!unlocked(p,stage))return `Graduate from ${STAGES[i-1].title} to open this stage.`;if(!canOpen(p,id))return `Master “${ls[n-1].title}” to open this lesson.`;return '';}
+ function lessonRequirement(p,id){const stage=stageFor(id),i=STAGES.findIndex(s=>s.id===stage),ls=lessonsFor(stage),n=ls.findIndex(l=>l.id===id);if(i<0)return 'Choose a lesson from Cube Quest.';if(!unlocked(p,stage))return `Graduate from ${before(stage).title} to open this stage.`;if(!canOpen(p,id))return `Master “${ls[n-1].title}” to open this lesson.`;return '';}
  function record(p,id){return p.quest.records[id]||(p.quest.records[id]={practiced:false,understood:false,independent:false});}
  function finishAttempt(p,id,attempt){
   if(!canOpen(p,id)||!attempt||attempt.complete!==true||attempt.solved!==true)return false;
@@ -39,7 +49,7 @@
  function finishChallenge(p,id,answers){const qs=QUESTIONS[id];if(!qs||!ready(p,id)||!Array.isArray(answers)||answers.length!==qs.length||!qs.every((q,i)=>answers[i]===q.answer))return false;if(!p.quest.challenges.includes(id))p.quest.challenges.push(id);return true;}
  function graduate(p,id){if(!ready(p,id)||!p.quest.challenges.includes(id))return false;if(!p.quest.graduated.includes(id))p.quest.graduated.push(id);if(id==='beginner')p.quest.independentSolve=true;return true;}
  function grant(p,id){if(!validStage(id))return false;if(!p.quest.grants.includes(id))p.quest.grants.push(id);return true;}
- function nextLesson(p){const s=STAGES.find(s=>s.id===p.quest.selected&&unlocked(p,s.id)&&!p.quest.graduated.includes(s.id))||STAGES.find(s=>unlocked(p,s.id)&&!p.quest.graduated.includes(s.id))||STAGES[STAGES.length-1];return lessonsFor(s.id).find(l=>!mastered(p,l.id))||lessonsFor(s.id)[0];}
+ function nextLesson(p){const open=s=>unlocked(p,s.id)&&!p.quest.graduated.includes(s.id);const s=STAGES.find(s=>s.id===p.quest.selected&&open(s))||MAIN.find(open)||MAIN[MAIN.length-1];return lessonsFor(s.id).find(l=>!mastered(p,l.id))||lessonsFor(s.id)[0];}
  function timerOpen(p){return p.quest.independentSolve;}
  function addTime(p,ms,at,reflection){if(!timerOpen(p)||!Number.isFinite(ms)||ms<1000||ms>86400000||!Number.isFinite(at)||at<=0)return false;p.quest.times=normalize({times:[...p.quest.times,{ms,at,reflection}]}).times;return true;}
  const QUESTIONS={
@@ -62,7 +72,12 @@
    {prompt:'Before starting this cross example, a useful plan is…',lesson:'speed-inspection',choices:['Turn randomly until it works','Picture U then F2 before turning','Try to beat someone else'],answer:1},
    {prompt:'When layers catch during finger practice, you should…',choices:['Force the next turn','Ignore alignment','Slow down, relax, and finish each turn'],answer:2},
    {prompt:'During a familiar pair insertion, lookahead means…',choices:['Noticing the next pair’s pieces','Watching only the current pair forever','Skipping inspection'],answer:0}
+  ],
+  roux:[
+   {prompt:'Which pieces make the finished left block?',lesson:'roux-left-block',choices:['Any six red stickers','The red center with three edges and two corners that all match','The white cross'],answer:1},
+   {prompt:'While you build the right block, which turns keep the left block safe?',choices:['L and D turns','Any turn at all','R, r, M and U turns'],answer:2},
+   {prompt:'Three top edges point at one bottom edge. What fixes this arrow?',lesson:'roux-edge-arrow',choices:['M′ U M','R U R′ U′','A brand-new scramble'],answer:0}
   ]
  };
- root.CubeClubQuest={STAGES,QUESTIONS,normalize,state,mastered,stageFor,lessonsFor,granted,unlocked,canOpen,lessonRequirement,finishAttempt,answerConcept,ready,finishChallenge,graduate,grant,nextLesson,timerOpen,addTime};
+ root.CubeClubQuest={STAGES,MAIN,before,after,branchesFrom,QUESTIONS,normalize,state,mastered,stageFor,lessonsFor,granted,unlocked,canOpen,lessonRequirement,finishAttempt,answerConcept,ready,finishChallenge,graduate,grant,nextLesson,timerOpen,addTime};
 })(globalThis);

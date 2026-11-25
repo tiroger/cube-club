@@ -37,7 +37,8 @@ The original background and generation prompt are in [`assets/dmg`](assets/dmg/A
 
 - **A cohesive clubhouse with a Mac title bar:** Cube Club branding beside the Mac window controls, a toolbar that shares the sidebar’s colors, rounded type, and illustrations. Hide the sidebar for more room or use Mac keyboard shortcuts.
 - **My clubhouse:** an original illustrated cube character, a friendly starting point, and saved learning progress.
-- **Cube Quest — four stages and 27 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
+- **Cube Quest — four stages, an optional branch, and 35 lessons:** Beginner / First Solve → Intermediate / Piece Partners → Advanced / Clever Solutions → Speed Solver / Smooth Moves. Stages and lessons show their prerequisites and open through mastery, stage questions, and parent-confirmed physical milestones.
+- **Block Builders — an optional Roux branch, eight lessons:** opens after First Solve, alongside Piece Partners. Meet the middle slice (M), finish a left block, build the right block with wide r turns, turn the top corners yellow-up with Sune, trade two corners, find the edge-flipping “arrow”, place the side edges, and finish the last four edges with only M and U. Graduating the branch opens nothing else; a parent can open it separately.
 - **First solve — 13 short missions:** cube notation, making a daisy, matching the white cross, right/left patterns, white-corner insertion, both middle-edge insertions, yellow cross, corner homes, finishing corner orientation, Sune as an alternative pattern, and the final edge cycle. New lessons explain trapped-piece recovery and why the lower layers temporarily look mixed during corner orientation.
 - **Next steps — six more missions:** direct white-cross insertion, alignment and restoration; ready F2L pairs on the right and left; and an introductory pair-building case. Follow the actual corner/edge stickers through each turn, with per-move explanations and six-face diagrams.
 - **Pattern practice:** eight cross/F2L recognition cases, gentle hints, links to the matching animated lesson, and three-case reviews that prioritize mistakes before new and less-practiced cases.
@@ -96,7 +97,7 @@ Window size and position are remembered. The sidebar is visible at launch and ca
 
 ## Follow Cube Quest
 
-Open **Cube Quest** in the sidebar. All four destinations are visible. A locked destination previews its lessons and explains which earlier graduation is needed. Within a stage, master the previous lesson to open the next one. Each lesson has four saved steps:
+Open **Cube Quest** in the sidebar. All four destinations are visible, with the optional Block Builders branch beneath them. A locked destination previews its lessons and explains which earlier graduation is needed. Within a stage, master the previous lesson to open the next one. Each lesson has four saved steps:
 
 1. **Learn:** finish the guided pattern or autoplay.
 2. **Practice:** perform the pattern from memory. Hints and retries count as practice.
@@ -162,6 +163,8 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Illegal scan states including flipped edges, twisted corners, and odd parity.
 - Basic color classification and stored-progress sanitization.
 - HTML escaping: `html`, `escapeHTML` and `raw` escape markup characters, attribute quotes, nested fragments and arrays.
+- Slice (M, E, S), wide (r and the other lowercase turns) and whole-cube (x, y, z) animation against the cube model, from a scrambled start; spoken wording for every move.
+- Block Builders: each lesson's setup, piece positions and descriptions; both blocks stay intact through the right-block, corner and edge steps; the corner swap keeps yellow up and reduces a diagonal case to a matching-side case; the branch's gates, grants, suggestions and graduation.
 - Every button route in the interface: navigation, playground, lesson controls, pattern practice, Case Detective, Together Time and scan review, each driven through the page's click handling.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
 - Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
@@ -199,6 +202,7 @@ Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interf
   next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
   next-ui.js                              Diagrams and cross/F2L pattern practice
   quest-lessons.js                         Additional last-layer and speed workshops
+  roux-lessons.js                          Block Builders: the optional Roux branch
   quest-core.js                            Mastery, progression, graduation and timing state
   quest-ui.js                              Adventure map, parent checkpoints and solve timer
   coach-core.js                           Observation matching, challenge cases, shared-round state
@@ -222,6 +226,7 @@ For layout work only, serve the `Web` folder with a local server. Browser previe
 - [Rubik’s solution guides](https://www.rubiks.com/solution-guides) provided a reference for the beginner layer sequence; lesson wording and planner are original.
 - [CubeSkills F2L](https://www.cubeskills.com/tutorials/f2l) and [Optimising the Beginner’s Method](https://www.cubeskills.com/tutorials/optimising-the-beginners-method) informed the progression into direct cross planning and corner-edge pairs. The app’s explanations, diagrams, and practice cases are original; every taught setup is checked against the cube model.
 - [CubeSkills four-look last layer](https://www.cubeskills.com/tutorials/4-look-last-layer), [PLL algorithms](https://www.cubeskills.com/uploads/pdf/tutorials/pll-algorithms.pdf), and [lookahead progression](https://cubeskills.com/blog/lookahead-progression-framework) informed the additional topics. Explanations and generated cube diagrams are original; algorithms are checked against the local cubie model.
+- The Block Builders branch teaches the Roux method, published by Gilles Roux in 2003. Philo Li’s article [“How to Solve a Rubik’s Cube in 30 Seconds Without Memorizing”](https://medium.com/@philo2018/how-to-solve-a-rubiks-cube-in-30-seconds-without-memorizing-even-a-child-can-understand-828b73525a7b) prompted it, including the arrow idea for flipping edges. Lessons, cases and explanations are original and checked against the local cubie model.
 - [Official Rubik’s solution guides](https://www.rubiks.com/solution-guides) informed the beginner stage structure. No branded images or tutorial text were copied.
 - [cube.js by Petri Lehtinen and Ludovic Fernandez](https://github.com/ldez/cubejs/tree/v1.3.2), pinned to **v1.3.2**, provides the cubie model and two-phase solver. Its [MIT license](Sources/CubeClub/Resources/Web/vendor/LICENSE.cubejs) is included in source and bundled with the app.
 - Independent project; not affiliated with or endorsed by Rubik’s.

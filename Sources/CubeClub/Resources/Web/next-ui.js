@@ -6,8 +6,10 @@ function focusDiagrams(state,pieces){
  return `<details class="piece-map"><summary>Find the outlined pieces on all six sides</summary><div class="piece-map-grid">${FACES.map(f=>faceDiagram(state,f,indices.filter(i=>Math.floor(i/9)===FACES.indexOf(f)).map(i=>i%9))).join('')}</div><p class="small-note">Each little square is a straight-on view of one face. Letters inside outlined stickers name their colors.</p></details>`;
 }
 function lessonPiecePanel(){
- const l=session.lesson,state=session.cube.asString(),pair=l.skill==='pair',together=pair&&Next.paired(state,...l.focusPieces);
- return `<div class="piece-coach"><div class="eyebrow">FOLLOW THESE PIECES</div><div class="piece-swatch-row">${l.focusPieces.map((p,i)=>pieceSwatch(p,p.length===3?'Corner':(pair||l.skill==='lookahead')?'Matching edge':i===0?'Edge to follow':'Bring this back')).join('')}</div><div class="piece-status"><span>${Next.crossCount(session.cube)} of 4 cross edges home</span>${pair?`<span>${together?'Shared colors line up':'Shared colors need lining up'}</span>`:''}</div>${focusDiagrams(state,l.focusPieces)}<p class="small-note">Outlined pieces move with the animation. Drag the cube to see hidden stickers. A cross edge may move temporarily; the plan brings it back.</p></div>`;
+ // Roux builds blocks without a cross, so its lessons skip the cross count and cross note.
+ const l=session.lesson,state=session.cube.asString(),roux=l.questStage==='roux',rouxPair=roux&&l.focusPieces.length===2&&l.focusPieces[0].length===3,pair=l.skill==='pair'||rouxPair,together=pair&&Next.paired(state,...l.focusPieces);
+ const label=(p,i)=>p.length===3?'Corner':roux?(rouxPair?'Matching edge':'Edge'):(pair||l.skill==='lookahead')?'Matching edge':i===0?'Edge to follow':'Bring this back';
+ return `<div class="piece-coach"><div class="eyebrow">FOLLOW THESE PIECES</div><div class="piece-swatch-row">${l.focusPieces.map((p,i)=>pieceSwatch(p,label(p,i))).join('')}</div><div class="piece-status">${roux?'':`<span>${Next.crossCount(session.cube)} of 4 cross edges home</span>`}${pair?`<span>${together?'Shared colors line up':'Shared colors need lining up'}</span>`:''}</div>${focusDiagrams(state,l.focusPieces)}<p class="small-note">Outlined pieces move with the animation. Drag the cube to see hidden stickers.${roux?'':' A cross edge may move temporarily; the plan brings it back.'}</p></div>`;
 }
 function patternPage(){
  if(session?.type==='pattern'){

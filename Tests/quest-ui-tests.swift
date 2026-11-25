@@ -30,7 +30,8 @@ final class QuestUIRunner: NSObject, NSApplicationDelegate, WKNavigationDelegate
         window.orderFront(nil)
         let directory = root.appendingPathComponent("Sources/CubeClub/Resources/Web")
         web.loadFileURL(directory.appendingPathComponent("index.html"),allowingReadAccessTo: directory)
-        DispatchQueue.main.asyncAfter(deadline: .now()+120) { self.fail("WebKit quest test timed out") }
+        // A hang guard, not a speed check: the walkthrough plays every lesson in all three modes.
+        DispatchQueue.main.asyncAfter(deadline: .now()+300) { self.fail("WebKit quest test timed out") }
     }
     func fail(_ message: String) { fputs("Quest UI failure: \(message)\n",stderr); exit(1) }
     func webView(_ webView: WKWebView,didFinish navigation: WKNavigation!) {

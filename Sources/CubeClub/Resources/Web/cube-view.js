@@ -14,6 +14,24 @@
     if(axis===1) return [x*c+z*s,y,-x*s+z*c];
     return [x*c-y*s,x*s+y*c,z];
   }
+  // Which stickers a move turns, as a test on their coordinate along the
+  // reference face's axis (scaled so the reference face is positive).
+  // Slices follow the standard references: M like L, E like D, S like F;
+  // x, y and z turn the whole cube like R, U and F.
+  const SLICES={M:'L',E:'D',S:'F'}, ROTATIONS={x:'R',y:'U',z:'F'};
+  function turnLayer(move) {
+    const base=String(move||'')[0], suffix=String(move).slice(1);
+    if(!['',"'",'2'].includes(suffix))return null;
+    let face, select;
+    if(BASES[base]){face=base;select=c=>c>.9;}
+    else if(SLICES[base]){face=SLICES[base];select=c=>Math.abs(c)<.1;}
+    else if(ROTATIONS[base]){face=ROTATIONS[base];select=()=>true;}
+    else if('urfdlb'.includes(base)&&base){face=base.toUpperCase();select=c=>c>-.1;}
+    else return null;
+    const normal=BASES[face].n, axis=normal.findIndex(v=>v!==0), sign=normal[axis];
+    const amount=suffix==='2'?2:suffix==="'"?-1:1;
+    return {axis,sign,angle:-sign*amount*Math.PI/2,moves:center=>select(center[axis]*sign)};
+  }
   function faceletGeometry(index) {
     const face=FACES[Math.floor(index/9)], row=Math.floor(index%9/3)-1,col=index%3-1;
     const b=BASES[face];
@@ -36,14 +54,14 @@
     destroy() {this.disposed=true;this.resizeObserver.disconnect();}
     async turn(move,duration=650) {
       if(this.animation || this.disposed)return;
-      const normal=BASES[move[0]].n, axis=normal.findIndex(v=>v!==0),sign=normal[axis];
+      const layer=turnLayer(move);if(!layer)return;const {axis,sign}=layer;
       const amount=move.endsWith('2')?2:move.endsWith("'")?-1:1;
       const start=performance.now();
       return new Promise(resolve=>{
         const frame=now=>{
           if(this.disposed){resolve();return;}
           const t=Math.min(1,(now-start)/Math.max(duration,1)),ease=t*t*(3-2*t);
-          this.animation={axis,sign,angle:-sign*amount*Math.PI/2*ease};this.draw();
+          this.animation={axis,sign,moves:layer.moves,angle:-sign*amount*Math.PI/2*ease};this.draw();
           if(t<1)requestAnimationFrame(frame);else{this.cube.move(move);this.animation=null;this.draw();resolve();}
         };requestAnimationFrame(frame);
       });
@@ -62,7 +80,7 @@
       const highlights=this.highlightPieces?CubeClubNext.pieceIndices(facelets,this.highlightPieces):this.highlightIndices;
       for(let i=0;i<54;i++){
         const geo=faceletGeometry(i);let points=geo.points,normal=geo.normal,center=geo.center;
-        if(this.animation && center[this.animation.axis]*this.animation.sign>.9){const a=this.animation;points=points.map(p=>rotate(p,a.axis,a.angle));normal=rotate(normal,a.axis,a.angle);center=rotate(center,a.axis,a.angle);}
+        if(this.animation && this.animation.moves(center)){const a=this.animation;points=points.map(p=>rotate(p,a.axis,a.angle));normal=rotate(normal,a.axis,a.angle);center=rotate(center,a.axis,a.angle);}
         const n=view(normal),v=view(center);if(n[0]*(-v[0])+n[1]*(-v[1])+n[2]*(8-v[2])<=0)continue;
         polygons.push({index:i,points:points.map(project),depth:project(center)[2],color:COLORS[facelets[i]],center:project(center),label:i%9===4?geo.face:null});
       }
@@ -75,5 +93,5 @@
       }
     }
   }
-  root.CubeGeometry={BASES,faceletGeometry,rotate};root.CubeView=CubeView;
+  root.CubeGeometry={BASES,faceletGeometry,rotate,turnLayer};root.CubeView=CubeView;
 })(typeof globalThis!=='undefined'?globalThis:this);

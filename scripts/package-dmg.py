@@ -16,6 +16,7 @@ from mac_alias import Alias
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "build/Cube Club.app"
+ENTITLEMENTS = ROOT / "scripts/CubeClub.entitlements"
 BACKGROUND = ROOT / "build/dmg-background.tiff"
 EMBEDDED_BACKGROUND = Path("Contents/Resources/InstallerBackground.tiff")
 LAYOUT = json.loads((ROOT / "scripts/dmg-layout.json").read_text())
@@ -107,8 +108,11 @@ def main():
     app_background = APP / EMBEDDED_BACKGROUND
     if not app_background.is_file() or digest(app_background) != digest(BACKGROUND):
         shutil.copyfile(BACKGROUND, app_background)
-        run("/usr/bin/codesign", "--force", "--deep", "--sign", "-", str(APP))
+        run("/usr/bin/codesign", "--force", "--deep", "--sign", "-", "--entitlements", str(ENTITLEMENTS), str(APP))
     run("/usr/bin/codesign", "--verify", "--deep", "--strict", str(APP))
+    # Re-signing without it would make the general solver's first run about 20 times slower.
+    if b"com.apple.security.cs.allow-jit" not in run("/usr/bin/codesign", "-d", "--entitlements", "-", str(APP), capture=True):
+        raise SystemExit("The app is missing its JIT entitlement. Rebuild it with ./scripts/build.sh.")
     destination = ROOT / "dist"
     destination.mkdir(exist_ok=True)
     filename = f"Cube-Club-{version}-{arch_label}.dmg"

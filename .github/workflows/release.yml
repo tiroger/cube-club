@@ -17,6 +17,8 @@ on:
       - scripts/Info.plist
       - scripts/CubeClub.entitlements
       - scripts/make-appcast.sh
+      - scripts/sign-app.sh
+      - scripts/notarize.sh
       - Package.swift
       - Package.resolved
       - assets/dmg/**
@@ -55,8 +57,52 @@ jobs:
       - name: Run tests
         run: ./scripts/test.sh
 
+      # A throwaway keychain holds the Developer ID certificate for this run only.
+      - name: Import the Developer ID certificate
+        env:
+          CERTIFICATE: ${{ secrets.DEVELOPER_ID_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          if [[ -z "$CERTIFICATE" ]]; then
+            if [[ "$GITHUB_REF_TYPE" == tag ]]; then echo "::error::DEVELOPER_ID_CERTIFICATE is not set."; exit 1; fi
+            echo "No certificate on this run; building ad hoc."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password=$(openssl rand -hex 24)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          (umask 077; printf '%s' "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12")
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign >/dev/null
+          rm -f "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          identity=$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)
+          [[ -n "$identity" ]] || { echo "::error::The certificate has no Developer ID Application identity."; exit 1; }
+          echo "Signing with $identity"
+          echo "CUBE_CLUB_SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+
       - name: Build and verify the DMG
         run: ./scripts/build-dmg.sh
+
+      # Stapling changes the DMG, so this runs before the update feed is signed.
+      - name: Notarize the DMG
+        if: env.CUBE_CLUB_SIGN_IDENTITY != ''
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ -z "$APP_STORE_CONNECT_KEY" || -z "$APP_STORE_CONNECT_KEY_ID" || -z "$APP_STORE_CONNECT_ISSUER_ID" ]]; then
+            echo "::error::The App Store Connect API key secrets are not all set."
+            exit 1
+          fi
+          export APP_STORE_CONNECT_KEY_FILE="$RUNNER_TEMP/AuthKey.p8"
+          (umask 077; printf '%s\n' "$APP_STORE_CONNECT_KEY" > "$APP_STORE_CONNECT_KEY_FILE")
+          trap 'rm -f "$APP_STORE_CONNECT_KEY_FILE"' EXIT
+          ./scripts/notarize.sh dist/Cube-Club-"$VERSION"-*.dmg
 
       # Installed copies read releases/latest/download/appcast.xml and accept only
       # DMGs signed with this key (its public half is SUPublicEDKey in Info.plist).
@@ -102,7 +148,7 @@ jobs:
           {
             echo "Cube Club $VERSION (build $BUILD) for Apple silicon Macs."
             echo
-            echo "This build is ad hoc signed, not notarized, so macOS blocks it the first time. Try to open it once, then choose **Open Anyway** in **System Settings → Privacy & Security**."
+            echo "Signed with a Developer ID and notarized by Apple. Open the DMG and drag Cube Club to Applications. Installed copies of 0.11.0 or later update themselves."
             echo
             cat notes.md
             echo
@@ -110,3 +156,7 @@ jobs:
           } > release-notes.md
           gh release create "$GITHUB_REF_NAME" dist/Cube-Club-"$VERSION"-*.dmg dist/Cube-Club-"$VERSION"-*.dmg.sha256 dist/appcast.xml \
             --title "Cube Club $VERSION" --notes-file release-notes.md --verify-tag
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true

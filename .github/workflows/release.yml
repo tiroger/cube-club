@@ -89,6 +89,9 @@ jobs:
       - name: Build and verify the DMG
         run: ./scripts/build-dmg.sh
 
+      - name: Launch the app without the build folder
+        run: ./scripts/smoke-launch.sh
+
       # Stapling changes the DMG, so this runs before the update feed is signed.
       - name: Notarize the DMG
         if: env.CUBE_CLUB_SIGN_IDENTITY != ''

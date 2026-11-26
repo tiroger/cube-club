@@ -17,7 +17,7 @@ You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing
 
 ## Install from a disk image
 
-Open `dist/Cube-Club-0.9.3-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, and a fixed Finder layout. Its top level contains only the app and Applications, even when Finder shows hidden files.
+Open `dist/Cube-Club-0.10.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, and a fixed Finder layout. Its top level contains only the app and Applications, even when Finder shows hidden files.
 
 The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
 

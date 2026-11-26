@@ -33,3 +33,6 @@ jobs:
       # the whole app too. This is the only step that compiles App.swift.
       - name: Build the app
         run: ./scripts/build.sh
+
+      - name: Launch the app without the build folder
+        run: ./scripts/smoke-launch.sh

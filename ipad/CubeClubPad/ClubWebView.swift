@@ -45,6 +45,13 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         if ProcessInfo.processInfo.arguments.contains("--measure-solver") { SpikeChecks.measureSolver(in: webView) }
+        #if DEBUG
+        // Debug builds only: --spike-js "<script>" runs once the page loads, to open a screen for a screenshot.
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "--spike-js"), index + 1 < arguments.count {
+            webView.callAsyncJavaScript("while (!document.querySelector('#content h1')) await new Promise(r => setTimeout(r, 50));\n" + arguments[index + 1], arguments: [:], in: nil, in: .page) { _ in }
+        }
+        #endif
     }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {

@@ -234,3 +234,22 @@ The app is now signed with `com.apple.security.cs.allow-jit`. Without it, JavaSc
 GitHub Actions now runs the full suite and the app build on macOS 15 (Swift 6.1.2). On those runners, the camera preview test requires independence from slow analysis (at least 40 frames, 6 fps and p95 under 1 s). Local runs keep the 100 frames / 20 fps / 250 ms thresholds. The first runner measurements were 17–18 fps.
 
 The complete suite passed locally and on CI. The Apple silicon 0.10.0 DMG (build 17) passed read-only image, exact app contents, local signature, Applications shortcut, artwork, and icon-layout verification. The mounted app reports 0.10.0 (17), carries the JIT entitlement, and includes the Roux lessons. SHA-256: `ffe68ff210d5c7dd686893e676dafe6631fd157477e8133aa29dd8745ec9024a`.
+
+## Version 0.11.0 — automatic updates
+
+Cube Club now keeps itself current with Sparkle 2.10.1.
+- **Checking:** once a day it reads `appcast.xml` from the latest GitHub release.
+- **Installing:** a newer build downloads quietly and installs when the app quits.
+- **Trust:** only DMGs signed with the project's EdDSA key are accepted.
+- **Parent control:** Grown-up corner → Progress → **Stay up to date** turns checking and installing off together, or checks now, and says what reaches GitHub (the Mac's internet address) and what never does (progress, pictures, names). **Cube Club → Check for Updates…** also checks.
+
+Copies of 0.10.0 or earlier don't include the updater, so this version needs one manual install. Later versions arrive on their own, without the **Open Anyway** step.
+
+The end-to-end test used a separate bundle ID and a feed served from the build Mac:
+- **Update:** an ad hoc signed 0.10.1 build downloaded a signed 0.10.2 DMG within two seconds of launch and installed it when the app quit.
+- **Installed app:** it kept a valid signature and the JIT entitlement, and had no quarantine flag.
+- **Tampered DMG:** a DMG that didn't match the feed's signature was downloaded but not installed; a control run with the same timing installed the genuine one.
+
+The release workflow signed a pull request build with the repository secret, and that signature verified against the build Mac's keychain key. The native shell suite drives the new settings section against a stand-in updater (72 checks).
+
+The complete suite passed. The Apple silicon 0.11.0 DMG (build 18) passed read-only image, exact app contents, local signature, Applications shortcut, artwork, and icon-layout verification. The mounted app reports 0.11.0 (18), embeds Sparkle.framework, names the GitHub feed, and carries the JIT entitlement. SHA-256: `db554340ccc286ff473e91bbb4c6bb5d8a3b4a318ad6903df9d491b60ba44528`.

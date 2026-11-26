@@ -253,3 +253,14 @@ The end-to-end test used a separate bundle ID and a feed served from the build M
 The release workflow signed a pull request build with the repository secret, and that signature verified against the build Mac's keychain key. The native shell suite drives the new settings section against a stand-in updater (72 checks).
 
 The complete suite passed. The Apple silicon 0.11.0 DMG (build 18) passed read-only image, exact app contents, local signature, Applications shortcut, artwork, and icon-layout verification. The mounted app reports 0.11.0 (18), embeds Sparkle.framework, names the GitHub feed, and carries the JIT entitlement. SHA-256: `db554340ccc286ff473e91bbb4c6bb5d8a3b4a318ad6903df9d491b60ba44528`.
+
+## Version 0.12.0 — signed and notarized
+
+Cube Club is now signed with a Developer ID (team GLG686ZJ9Q) and notarized by Apple, so it opens without the **Open Anyway** step. Installed copies of 0.11.0 update to it automatically. The app runs under the hardened runtime, with entitlements for the solver's JIT and the camera. macOS asks for camera access again once, because the app's signature changed.
+
+Tested:
+- **Gatekeeper:** the stapled DMG and the app inside it are both accepted as "Notarized Developer ID". The app reports 0.12.0 (19) and has both entitlements.
+- **Updates:** end to end with a separate bundle ID and a local feed, an ad hoc copy signed like 0.11.0 updated to a Developer ID copy, and a Developer ID copy updated to a newer one. Both installed apps kept valid signatures.
+- **Release workflow:** on a pull request, it imported the certificate, signed, notarized, stapled, and signed the update feed on GitHub's runner.
+
+The complete suite passed. The 0.12.0 DMG built on the release Mac was notarized and stapled. SHA-256: `ac48f8533b1de5ec8bb83b4fe11fd89a6cd1b12c303980364bf7bbed9bebf4c7`.

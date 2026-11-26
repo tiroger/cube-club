@@ -11,7 +11,9 @@
 set -euo pipefail
 dmg=${1:?Usage: notarize.sh <dmg>}
 [[ -f "$dmg" ]] || { echo "No such DMG: $dmg" >&2; exit 1; }
-codesign -dv "$dmg" 2>&1 | grep -q "Authority=Developer ID Application" || { echo "$dmg is not Developer ID signed." >&2; exit 1; }
+# Output is captured before searching: with pipefail, grep -q's early exit would fail the pipe.
+signature=$(codesign -dvv "$dmg" 2>&1)
+grep -q "Authority=Developer ID Application" <<<"$signature" || { echo "$dmg is not Developer ID signed." >&2; exit 1; }
 
 if [[ -n "${APP_STORE_CONNECT_KEY_ID:-}" ]]; then
   credentials=(--key "${APP_STORE_CONNECT_KEY_FILE:?}" --key-id "$APP_STORE_CONNECT_KEY_ID" --issuer "${APP_STORE_CONNECT_ISSUER_ID:?}")
@@ -32,8 +34,9 @@ echo "Accepted (submission $id)."
 
 xcrun stapler staple "$dmg"
 xcrun stapler validate "$dmg"
-spctl --assess --type open --context context:primary-signature -vv "$dmg" 2>&1 | tee /dev/stderr | grep -q "source=Notarized Developer ID" \
-  || { echo "Gatekeeper does not accept $dmg as notarized." >&2; exit 1; }
+assessment=$(spctl --assess --type open --context context:primary-signature -vv "$dmg" 2>&1 || true)
+echo "$assessment"
+grep -q "source=Notarized Developer ID" <<<"$assessment" || { echo "Gatekeeper does not accept $dmg as notarized." >&2; exit 1; }
 
 # Stapling changes the file, so the checksum is written afterwards.
 ( cd "$(dirname "$dmg")" && shasum -a 256 "$(basename "$dmg")" > "$(basename "$dmg").sha256" )

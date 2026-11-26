@@ -6,7 +6,9 @@ A gentle, playful Rubik’s Cube workshop for a curious eight-year-old. A native
 
 Download the latest `Cube-Club-<version>-arm64.dmg` from [GitHub Releases](https://github.com/tiroger/cube-club/releases/latest). Open it and drag **Cube Club** onto **Applications**. Cube Club needs an Apple silicon Mac with macOS 13 or later.
 
-The app is signed for development but not notarized by Apple, so macOS blocks the first launch. Open Cube Club once, then choose **Open Anyway** in **System Settings → Privacy & Security**. That is needed only once: from 0.11.0 on, Cube Club updates itself (see [Updates](#updates)). Copies of 0.10.0 or earlier need one manual install of a newer release.
+Releases after 0.11.0 are signed with a Developer ID and notarized by Apple, so they open like any other Mac app. Cube Club updates itself from 0.11.0 on (see [Updates](#updates)), so installed copies move to signed builds automatically. Copies of 0.10.0 or earlier need one manual install of a newer release.
+
+0.11.0 and earlier releases were not notarized. If you install one of those by hand, macOS blocks the first launch: open Cube Club once, then choose **Open Anyway** in **System Settings → Privacy & Security**.
 
 ## Build from source
 
@@ -17,7 +19,7 @@ Install Xcode or Apple’s Swift command line tools, then run:
 open "build/Cube Club.app"
 ```
 
-The first build downloads [Sparkle](https://sparkle-project.org) through Swift Package Manager; no npm install, API key, or account is needed. You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera, updates, or the solver’s speed. It carries the camera permission description, a stable app identity, the update feed, and the JIT entitlement that lets the general solver build its tables in about a second. Building on an Intel Mac produces an Intel build.
+The first build downloads [Sparkle](https://sparkle-project.org) through Swift Package Manager; no npm install, API key, or account is needed. You can also open `Package.swift` in Xcode. Builds are ad hoc signed unless `CUBE_CLUB_SIGN_IDENTITY` names a certificate (see [Signing and notarization](#signing-and-notarization)). Use the packaged `.app` when testing the camera, updates, or the solver’s speed. It carries the camera permission description, a stable app identity, the update feed, and the JIT entitlement that lets the general solver build its tables in about a second. Building on an Intel Mac produces an Intel build.
 
 ### Disk image
 
@@ -29,7 +31,32 @@ The script builds the app, then packages `dist/Cube-Club-<version>-<arch>.dmg` a
 
 On its first run the script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies; Python 3.11+ is required. Before replacing a previous image, it checks disk-image integrity and mounts the image read-only. It then verifies both signatures, the exact app contents, the Applications link, the embedded background, and the icon locations. Building disk images needs normal access to macOS disk-image services; restricted command sandboxes can block them.
 
-The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`. Public distribution without the **Open Anyway** step would need a Developer ID certificate and Apple notarization.
+The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`.
+
+### Signing and notarization
+
+Release builds are signed with the **Developer ID Application** certificate of team `GLG686ZJ9Q` and notarized by Apple. This isn't a Mac App Store submission: the app is distributed directly. Notarization means Apple has scanned it for malware, so Gatekeeper opens it without warnings.
+
+```sh
+export CUBE_CLUB_SIGN_IDENTITY="Developer ID Application: Roger Lefort (GLG686ZJ9Q)"
+./scripts/build-dmg.sh
+./scripts/notarize.sh dist/Cube-Club-<version>-arm64.dmg
+```
+
+`scripts/sign-app.sh` does the signing for both `build.sh` and the DMG packager.
+- **Developer ID builds:** the hardened runtime and secure timestamps. Sparkle's helpers are re-signed with the same certificate.
+- **Entitlements:** `scripts/CubeClub.entitlements` grants the JIT, which the solver needs for speed, and the camera, which the hardened runtime otherwise blocks.
+- **Development builds:** without an identity, the app stays ad hoc signed as before.
+
+`scripts/notarize.sh` submits the DMG, waits for Apple, and staples the ticket. It then checks that Gatekeeper accepts the DMG as notarized and rewrites the checksum, because stapling changes the file.
+
+On a Mac, notarization uses the `notarytool` keychain profile `cube-club`, saved once with:
+
+```sh
+xcrun notarytool store-credentials cube-club --key AuthKey_<key id>.p8 --key-id <key id> --issuer <issuer id>
+```
+
+The key is an App Store Connect API key with Developer access: **Users and Access → Integrations → App Store Connect API → Team Keys**.
 
 ### Releases
 
@@ -43,7 +70,15 @@ The [Release DMG workflow](.github/workflows/release.yml) builds and publishes r
    git tag -a vX.Y.Z -m "Cube Club X.Y.Z" && git push origin vX.Y.Z
    ```
 
-The workflow first checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG and signs it for Sparkle. Finally it publishes a GitHub release with the DMG, its checksum, and `appcast.xml`. Pull requests that change packaging build all of these as a downloadable workflow artifact, without publishing anything.
+The workflow first checks that the tag matches `Info.plist` and runs the full test suite. It then imports the Developer ID certificate into a throwaway keychain, builds and verifies the DMG, notarizes and staples it, and signs it for Sparkle. Finally it publishes a GitHub release with the DMG, its checksum, and `appcast.xml`. A tag build fails rather than publish without the certificate.
+
+The workflow uses these repository secrets:
+
+| Secret | Holds |
+|---|---|
+| `DEVELOPER_ID_CERTIFICATE`, `DEVELOPER_ID_CERTIFICATE_PASSWORD` | The Developer ID identity as a base64 `.p12`, and its password |
+| `APP_STORE_CONNECT_KEY`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID` | The notarization API key (`.p8` contents), its Key ID, and the team's Issuer ID |
+| `SPARKLE_PRIVATE_KEY` | The EdDSA key that signs update feeds | Pull requests that change packaging build all of these as a downloadable workflow artifact, without publishing anything.
 
 ### Updates
 
@@ -252,7 +287,7 @@ Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interf
   camera-ui.js                            Shared detection overlay, capture and color teaching
   cube-view.js                            3D projection and animated layer turns
   vendor/                                 Pinned cube.js 1.3.2 sources and MIT license
-scripts/                                  Build, DMG, appcast, icon generation, and test entry points
+scripts/                                  Build, signing, notarization, DMG, appcast, icon and test entry points
 .github/workflows/                        Tests on every pull request; DMG releases from version tags
 Tests/                                    Model, rendering-geometry, and solver checks
 docs/                                     Design direction, next features, verification notes

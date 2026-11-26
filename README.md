@@ -2,60 +2,64 @@
 
 A gentle, playful Rubik’s Cube workshop for a curious eight-year-old. A native macOS app with an illustrated clubhouse, a real interactive 3D cube, short algorithm lessons, and a camera-assisted guide for the cube in your hands.
 
-## Open the app
+## Install
 
-Open **`build/Cube Club.app`** in Finder. The supplied local build is for Apple silicon and requires macOS 13 or later. It is locally signed for development, not notarized for public distribution.
+Download the latest `Cube-Club-<version>-arm64.dmg` from [GitHub Releases](https://github.com/tiroger/cube-club/releases/latest). Open it and drag **Cube Club** onto **Applications**. Cube Club needs an Apple silicon Mac with macOS 13 or later.
 
-To build from source, install Xcode or Apple’s Swift command line tools, then run:
+The app is signed for development but not notarized by Apple, so macOS blocks the first launch. Open Cube Club once, then choose **Open Anyway** in **System Settings → Privacy & Security**. That is needed only once: from 0.11.0 on, Cube Club updates itself (see [Updates](#updates)). Copies of 0.10.0 or earlier need one manual install of a newer release.
+
+## Build from source
+
+Install Xcode or Apple’s Swift command line tools, then run:
 
 ```sh
 ./scripts/build.sh
 open "build/Cube Club.app"
 ```
 
-You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera: it contains the camera permission description and a stable app identity. Version 0.3 adds on-device cube-face detection, perspective correction, steady automatic capture, and optional color calibration to both scanning and move checks. Version 0.3.1 separates preview and detection: video targets 30 fps while cube analysis runs up to 5 times per second. Slow analysis or a busy interface drops intermediate frames instead of queuing delayed video. No npm install, remote service, API key, or account is needed. Building on an Intel Mac produces an Intel build.
+The first build downloads [Sparkle](https://sparkle-project.org) through Swift Package Manager; no npm install, API key, or account is needed. You can also open `Package.swift` in Xcode. Use the packaged `.app` when testing the camera, updates, or the solver’s speed. It carries the camera permission description, a stable app identity, the update feed, and the JIT entitlement that lets the general solver build its tables in about a second. Building on an Intel Mac produces an Intel build.
 
-## Install from a disk image
-
-Open `dist/Cube-Club-0.11.0-arm64.dmg`, then drag **Cube Club** onto **Applications**. Eject the disk image and open Cube Club from Applications. The installer has a custom illustrated background, an Applications shortcut, and a fixed Finder layout. Its top level contains only the app and Applications, even when Finder shows hidden files.
-
-The current image is an Apple silicon build for macOS 13 or later. The app and disk image are locally signed for development. This is **not an Apple-notarized public release**: public distribution needs a Developer ID certificate and notarization. No Developer ID signing identity was available on the build Mac.
-
-To reproduce the complete app and installer build:
+### Disk image
 
 ```sh
 ./scripts/build-dmg.sh
 ```
 
-The script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies on its first run. Later runs reuse them. Python 3.11+ and the Swift command-line tools are required. Use `./scripts/build-dmg.sh --skip-build` to package an already-built app.
+The script builds the app, then packages `dist/Cube-Club-<version>-<arch>.dmg` and a `.dmg.sha256` checksum file. The installer has a custom illustrated background, an Applications shortcut, and a fixed Finder layout. Its top level contains only the app and Applications, even when Finder shows hidden files. Use `--skip-build` to package an already-built app.
 
-Output goes to `dist/`, with the version and architecture read from the app, plus a `.dmg.sha256` checksum file. Before replacing a previous image, the script checks disk-image integrity, mounts it read-only, verifies both signatures and exact app contents, and checks the Applications link, embedded background, and icon locations. Temporary images are ejected automatically. Building disk images requires normal access to macOS disk-image services; restricted command sandboxes can block them.
+On its first run the script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies; Python 3.11+ is required. Before replacing a previous image, it checks disk-image integrity and mounts the image read-only. It then verifies both signatures, the exact app contents, the Applications link, the embedded background, and the icon locations. Building disk images needs normal access to macOS disk-image services; restricted command sandboxes can block them.
 
-The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`.
+The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`. Public distribution without the **Open Anyway** step would need a Developer ID certificate and Apple notarization.
 
-### Releases on GitHub
+### Releases
 
-The **Release DMG** workflow builds the installer on GitHub's macOS runners. To publish a release:
+The [Release DMG workflow](.github/workflows/release.yml) builds and publishes releases on GitHub's macOS runners.
 
-1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `scripts/Info.plist` (and the other version strings), and add a `## Version X.Y.Z` section to `docs/VERIFICATION.md`.
-2. Merge to `main`, then tag that commit and push the tag:
+1. Bump the version: `CFBundleShortVersionString` and `CFBundleVersion` in `scripts/Info.plist`, `appVersion` in `continuity-core.js`, and the settings footer in `settings-ui.js`. Sparkle compares `CFBundleVersion`, so it must increase with every release.
+2. Add a `## Version X.Y.Z` section to `docs/VERIFICATION.md`. It becomes the release notes.
+3. Merge to `main`, then tag that commit and push the tag:
 
    ```sh
-   git tag v0.10.0 && git push origin v0.10.0
+   git tag -a vX.Y.Z -m "Cube Club X.Y.Z" && git push origin vX.Y.Z
    ```
 
-The workflow checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG, signs it for Sparkle, and publishes a GitHub release with the DMG, its checksum, and `appcast.xml`. The release notes come from that version's `VERIFICATION.md` section. Pull requests that change packaging build the DMG as a downloadable workflow artifact without publishing anything. Like local builds, these DMGs are ad hoc signed and not notarized.
+The workflow first checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG and signs it for Sparkle. Finally it publishes a GitHub release with the DMG, its checksum, and `appcast.xml`. Pull requests that change packaging build all of these as a downloadable workflow artifact, without publishing anything.
 
 ### Updates
 
-[Sparkle](https://sparkle-project.org) 2 keeps installed copies current. Once a day the app reads `appcast.xml` from the latest GitHub release (`SUFeedURL` in `scripts/Info.plist`). A newer build downloads quietly and installs when Cube Club quits. In **Grown-up corner → Progress → Stay up to date**, a parent can turn this off or check now; **Cube Club → Check for Updates…** does the same. The request reaches GitHub with the Mac's IP address. No progress, pictures or names are sent, and Sparkle's system profiling stays off.
+[Sparkle](https://sparkle-project.org) 2 keeps installed copies current.
+- **Checking:** once a day the app reads `appcast.xml` from the latest GitHub release (`SUFeedURL` in `scripts/Info.plist`).
+- **Installing:** a newer build downloads quietly and installs when Cube Club quits. Updated copies don't need **Open Anyway** again.
+- **Parent control:** in **Grown-up corner → Progress → Stay up to date**, a parent can turn this off or check now. **Cube Club → Check for Updates…** also checks.
+- **Privacy:** the request reaches GitHub with the Mac's IP address. No progress, pictures or names are sent, and Sparkle's system profiling stays off.
+- **Development builds:** builds without a feed and key in their `Info.plist` never start the updater.
 
 Sparkle installs only DMGs signed with the project's EdDSA key; its public half is `SUPublicEDKey` in `Info.plist`.
 - **Private key:** in the release Mac's login keychain under the account `cube-club`, and in the repository secret `SPARKLE_PRIVATE_KEY`.
 - **If it's lost:** installed copies can't accept new updates and must be reinstalled by hand.
 - **Moving it:** `./.build/artifacts/sparkle/Sparkle/bin/generate_keys --account cube-club -x <file>` exports it; `-f <file>` imports it.
 
-`./scripts/make-appcast.sh` signs a DMG and writes the feed. The release workflow uses it, and so can a local test against a feed served from this Mac. Updates replace an ad hoc signed app and carry no quarantine flag, so **Open Anyway** is needed only for the first manual install. Copies older than the first Sparkle release need that one manual install.
+`./scripts/make-appcast.sh` signs a DMG and writes the feed. The release workflow uses it, and so can a local test against a feed served from this Mac.
 
 ## What’s here
 
@@ -75,7 +79,7 @@ Sparkle installs only DMGs signed with the project's EdDSA key; its public half 
 - **Check my move:** optional snapshot checks after a guided turn. Review one or more faces; the app distinguishes ambiguous views, partial matches, full six-face matches, and common single-turn mistakes. Conditional repair instructions help undo an identified mistake.
 - **Case detective:** seven visual challenges using real cube states, highlighted stickers, hints, accessible color descriptions, and explanations for yellow shapes, edge slots, and a corner’s home.
 - **Together time:** parent-and-child rounds with alternating caller/turner roles, a reveal/predict/turn/discuss flow, gentle wrong-move feedback, and shared discoveries.
-- **Settings & grown-up corner:** Light, Dark, or Follow my Mac appearance; larger teaching text; reduced motion; read-aloud, slower turns and face labels; saved camera auto-capture choice; parent milestones and starting-stage overrides. Clear timer history, restore lesson locks, or deliberately reset all learning progress. Overrides open practice without awarding mastery or graduation; the controls are not password protection.
+- **Settings & grown-up corner:** Light, Dark, or Follow my Mac appearance; larger teaching text; reduced motion; read-aloud, slower turns and face labels; saved camera auto-capture choice; parent milestones and starting-stage overrides. Clear timer history, restore lesson locks, or deliberately reset all learning progress. Turn automatic updates off or check for one now. Overrides open practice without awarding mastery or graduation; the controls are not password protection.
 - **Discovery badges:** effort and learning count. There are no leaderboards, accounts, advertising, or streak penalties. Timing is optional.
 
 ## Try it in two minutes
@@ -91,7 +95,7 @@ Open **Settings & grown-up corner** in the sidebar, the toolbar’s gear button,
 
 - **Look & feel:** choose Light, Dark, or Follow my Mac. The native window follows the same appearance; the cube’s sticker colors stay unchanged. Larger text increases teaching copy and controls. Reduce motion shows turn results without spinning, and also respects the Mac’s Reduce Motion setting.
 - **Learning & camera:** choose read-aloud instructions, slower animated turns, center face letters, and automatic capture when a face is steady. Changing auto-capture inside a scan also saves the choice for the next scan or move check. The camera still starts only when requested and every capture needs review.
-- **Progress:** manage parent confirmations and starting-stage overrides. **Clear times…** removes timer history while preserving lesson progress and timer access. **Restore lesson locks** removes parent overrides while preserving earned mastery and graduations.
+- **Progress:** manage parent confirmations and starting-stage overrides. **Clear times…** removes timer history while preserving lesson progress and timer access. **Restore lesson locks** removes parent overrides while preserving earned mastery and graduations. **Stay up to date** turns automatic updates on or off, shows the installed version and the last check, and offers **Check now**.
 
 To start over, open **Progress → Reset all progress…**. Review the explanation, check the acknowledgement, and confirm. This clears all learning milestones, discoveries, practice records, solve counts, parent overrides, times, and saved lesson/solve sessions; it returns the learning path to the first beginner lesson and locks the optional timer. Appearance, accessibility, voice, pacing, labels, camera preferences, and learned camera colors remain saved. Cancel leaves everything unchanged. Save a backup before resetting if you want to bring this journey back later. There is no automatic reset during an update.
 
@@ -178,7 +182,7 @@ The scan solver uses Kociemba’s two-phase algorithm through cube.js. It finds 
 ./scripts/test.sh
 ```
 
-GitHub Actions runs the same script and a full app build on every push to `main` and every pull request ([workflow](.github/workflows/test.yml)).
+GitHub Actions runs the same script and a full app build on every push to `main` and every pull request ([workflow](.github/workflows/test.yml)). The runners are slower than a Mac, so there the camera preview test checks that preview stays independent of slow analysis rather than local frame rates. Pull requests that change packaging also build and verify the DMG and sign its update feed ([release workflow](.github/workflows/release.yml)).
 
 Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional package installation. Native image tests require access to macOS graphics services; a restricted headless sandbox can return empty image buffers. The suite also opens a temporary WebKit window with generated frames to measure preview throughput under slow detection; it does not open the camera or use learner data. The suite checks:
 
@@ -191,6 +195,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Block Builders: each lesson's setup, piece positions and descriptions; both blocks stay intact through the right-block, corner and edge steps; the corner swap keeps yellow up and reduces a diagonal case to a matching-side case; the branch's gates, grants, suggestions and graduation.
 - Every button route in the interface: navigation, playground, lesson controls, pattern practice, Case Detective, Together Time and scan review, each driven through the page's click handling.
 - Appearance defaults and live system changes, larger text, reduced-motion turns, saved camera preferences, legacy progress migration, separate reset scopes, cancellation, preference preservation, and reset persistence failure recovery.
+- Grown-up corner's update section against a stand-in updater: hidden without one, the automatic switch both ways, **Check now**, the privacy note, and an escaped version string.
 - Native wordmark navigation and modal protection, toolbar and original-sidebar navigation, lesson subtitles, sidebar hide/show, matching theme colors, larger-text layouts, scan/reset modal guards, rejected toolbar navigation during turns, progression gates, and timer behavior when leaving through native navigation.
 - Twenty deterministic 25-move scrambles through the general solver; 120 more through the beginner planner, with exact chunk states and all eight milestone objectives checked.
 - All 27 legal top-corner twist patterns, all 24 top-corner permutations, and all 12 even final-edge permutations through the beginner planner.
@@ -203,7 +208,7 @@ Uses Apple’s JavaScriptCore plus native Vision/Core Image, with no additional 
 - Guide recovery with the outer detector deliberately disabled, tracking through moving frames, fresh color sampling after a face changes, tracking resets, wide-camera guide geometry, and rejection of blank surfaces, stripes, and occlusion.
 - Next-step lesson preconditions, matching-pair geometry, highlighted-piece tracking after every move, restoration of the cross and finished slots, recognition-case setups, review priority, and saved-progress migration.
 - Cube Quest: legacy migration, stage and lesson prerequisites, assisted versus independent attempts, graduation reachability, parent grants, saved times, last-layer preconditions and two-pair drill geometry.
-- An isolated native WebKit test runs all 27 lessons and four graduations through the actual interface, including mistakes, retries, bypass prevention, physical-milestone confirmation, persistence, timer review/discard, and minimum-window layout.
+- An isolated native WebKit test runs all 35 lessons and all five stages, including the Block Builders branch, through the actual interface, including mistakes, retries, bypass prevention, physical-milestone confirmation, persistence, timer review/discard, and minimum-window layout.
 - Camera bridge integration: one-shot automatic capture, review locks, stale and out-of-order preview/analysis packets, calibration, and pending-solve protection.
 - Independent preview/detection queues, bounded delivery until WebKit finishes decoding, stop/restart isolation, and preview throughput with deliberately slow analysis.
 
@@ -213,6 +218,9 @@ See [verification notes](docs/VERIFICATION.md) for the native UI checks and rema
 
 ```text
 Sources/CubeClub/App.swift                 AppKit window, camera, speech, persistence, solver bridge
+Sources/CubeClub/NativeShell.swift         Toolbar wordmark, sidebar, Go and View menus
+Sources/CubeClub/BackupFiles.swift         Save/Open panels and bounded backup files
+Sources/CubeClub/ClubStorage.swift         Saved progress and the pre-restore recovery copy
 Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, bounded WebKit delivery
 Sources/CubeClub/CubeSolver.swift          Shared background JavaScriptCore service for both solve modes
 Sources/CubeClub/Updates.swift             Sparkle updater: daily check, quiet install on quit, parent switch
@@ -223,20 +231,29 @@ Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interf
   lesson-ui.js                            Guided lessons and solves, recall checks and concept questions
   play-ui.js                              Practice playground
   scan-ui.js                              Six-face review, manual painting and solver requests
+  beginner-core.js                        Beginner teaching planner for scanned cubes
+  beginner-lessons.js                     First Solve missions
+  teaching-ui.js                          Guided solve stages, milestones and camera checks
   core.js                                 Beginner curriculum, scan validation, colors, solver guard and safe HTML helpers
   next-core.js                            Cross/F2L curriculum, piece tracking, practice and review state
   next-ui.js                              Diagrams and cross/F2L pattern practice
-  quest-lessons.js                         Additional last-layer and speed workshops
-  roux-lessons.js                          Block Builders: the optional Roux branch
-  quest-core.js                            Mastery, progression, graduation and timing state
-  quest-ui.js                              Adventure map, parent checkpoints and solve timer
+  quest-lessons.js                        Additional last-layer and speed workshops
+  roux-lessons.js                         Block Builders: the optional Roux branch
+  quest-core.js                           Mastery, progression, graduation and timing state
+  quest-ui.js                             Adventure map, parent checkpoints and solve timer
   coach-core.js                           Observation matching, challenge cases, shared-round state
   coach-ui.js                             Move checks, Case Detective, and Together Time
+  continuity-core.js                      Saved sessions and backup format
+  continuity-ui.js                        Continue cards, backup and restore screens
+  settings-ui.js                          Settings, Grown-up corner and update controls
+  native-shell.js                         Mac toolbar and menu state
+  solver-worker.js                        Browser-preview solver worker
   vision-core.js                          Color calibration and temporal camera evidence
   camera-ui.js                            Shared detection overlay, capture and color teaching
   cube-view.js                            3D projection and animated layer turns
   vendor/                                 Pinned cube.js 1.3.2 sources and MIT license
-scripts/                                  Build, icon generation, and test entry points
+scripts/                                  Build, DMG, appcast, icon generation, and test entry points
+.github/workflows/                        Tests on every pull request; DMG releases from version tags
 Tests/                                    Model, rendering-geometry, and solver checks
 docs/                                     Design direction, next features, verification notes
 ```

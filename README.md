@@ -53,8 +53,11 @@ Sparkle installs only DMGs signed with the project’s EdDSA key. Its public hal
 1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `scripts/Info.plist`, `appVersion` in `continuity-core.js`, and the settings footer in `settings-ui.js`.
 2. Add a `## Version X.Y.Z` section to `docs/VERIFICATION.md`. It becomes the release notes.
 3. Merge to `main`, then tag: `git tag -a vX.Y.Z -m "Cube Club X.Y.Z" && git push origin vX.Y.Z`.
+4. Approve the run: on its page, **Review deployments → release → Approve and deploy**.
 
-The [release workflow](.github/workflows/release.yml) runs the tests and signs the app with the Developer ID certificate of team `GLG686ZJ9Q`. It then notarizes the DMG and publishes it with `appcast.xml`. It reads these repository secrets:
+The [release workflow](.github/workflows/release.yml) runs the tests and signs the app with the Developer ID certificate of team `GLG686ZJ9Q`. It then notarizes the DMG and publishes it with `appcast.xml`. The secrets live in the `release` environment, which only `v*` tags can use; pull requests and branches build unsigned.
+
+`main` accepts changes only through pull requests that pass the tests. Only admins can create `v*` tags, and they can't be moved or deleted. The secrets:
 
 | Secret | Holds |
 |---|---|

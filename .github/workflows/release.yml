@@ -16,6 +16,9 @@ on:
       - scripts/dmg-layout.json
       - scripts/Info.plist
       - scripts/CubeClub.entitlements
+      - scripts/make-appcast.sh
+      - Package.swift
+      - Package.resolved
       - assets/dmg/**
   workflow_dispatch:
 
@@ -55,6 +58,25 @@ jobs:
       - name: Build and verify the DMG
         run: ./scripts/build-dmg.sh
 
+      # Installed copies read releases/latest/download/appcast.xml and accept only
+      # DMGs signed with this key (its public half is SUPublicEDKey in Info.plist).
+      - name: Sign the update feed
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
+            if [[ "$GITHUB_REF_TYPE" == tag ]]; then echo "::error::SPARKLE_PRIVATE_KEY is not set."; exit 1; fi
+            echo "No signing key on this run; skipping the update feed."
+            exit 0
+          fi
+          dmg=$(ls dist/Cube-Club-"$VERSION"-*.dmg)
+          key="$RUNNER_TEMP/sparkle.key"
+          (umask 077; printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key")
+          trap 'rm -f "$key"' EXIT
+          ./scripts/make-appcast.sh "build/Cube Club.app" "$dmg" \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/v$VERSION/$(basename "$dmg")" dist/appcast.xml "$key"
+
       - name: Upload the DMG
         uses: actions/upload-artifact@v4
         with:
@@ -62,6 +84,7 @@ jobs:
           path: |
             dist/Cube-Club-${{ steps.version.outputs.version }}-*.dmg
             dist/Cube-Club-${{ steps.version.outputs.version }}-*.dmg.sha256
+            dist/appcast.xml
           if-no-files-found: error
 
       - name: Publish the release
@@ -85,5 +108,5 @@ jobs:
             echo
             echo "SHA-256 of the DMG: \`$checksum\`"
           } > release-notes.md
-          gh release create "$GITHUB_REF_NAME" dist/Cube-Club-"$VERSION"-*.dmg dist/Cube-Club-"$VERSION"-*.dmg.sha256 \
+          gh release create "$GITHUB_REF_NAME" dist/Cube-Club-"$VERSION"-*.dmg dist/Cube-Club-"$VERSION"-*.dmg.sha256 dist/appcast.xml \
             --title "Cube Club $VERSION" --notes-file release-notes.md --verify-tag

@@ -39,4 +39,22 @@ for(const id of ['hello','cross-direct','pll-t']){startLesson(id);assert(documen
 await command('scan');assert(document.documentElement.scrollWidth<=innerWidth&&$('.modal').scrollWidth<=$('.modal').clientWidth,'Large-text scan fits narrow native canvas');closeModal();
 await command('timer');startSolveTimer();await command('home');assert(solveTimer.phase==='review'&&progress.quest.times.length===0,'Native navigation stops timer without saving unconfirmed result');
 await command('settings');await click('[data-appearance="light"]');assert(document.documentElement.dataset.theme==='light','Light appearance works in native shell');closeModal();assert(getComputedStyle($('.sidebar')).backgroundColor==='rgb(241, 243, 235)','Original light sidebar palette is restored');
+// Updates: hidden without an updater; the parent switch and Check now go through the bridge.
+const progressTab=async()=>{await command('settings');await click('[data-settings-tab="progress"]');await tick();await tick();};
+await progressTab();
+assert($('#update-settings')?.hidden===true,'Update settings stay hidden when the updater is unavailable');
+closeModal();
+await bridge('updateTestState',{state:{available:true,automatic:true,canCheck:true,version:'0.11.0<b>x</b>'}});
+await progressTab();
+const updateText=()=>$('#update-settings').textContent;
+assert(!$('#update-settings').hidden&&$('#auto-updates').checked&&updateText().includes('Not checked yet'),'Update settings show the switch and check status');
+assert(updateText().includes('Cube Club 0.11.0<b>x</b>')&&!$('#update-settings b'),'The version is shown as text, not markup');
+assert(updateText().includes('never sent')&&updateText().includes('GitHub'),'Update settings explain what reaches GitHub');
+$('#auto-updates').click();await tick();
+assert((await bridge('updateState')).automatic===false&&!$('#auto-updates').checked,'Turning automatic updates off reaches the updater');
+$('#auto-updates').click();await tick();
+assert((await bridge('updateState')).automatic===true&&$('#auto-updates').checked,'Turning automatic updates back on reaches the updater');
+await click('[data-action="checkForUpdates"]');await tick();
+assert(/Last checked/.test(updateText()),'Check now asks the updater and shows when it last checked');
+closeModal();
 return checks+' Mac toolbar integration checks passed: integrated branding, original sidebar, collapse, navigation, lessons, modal guards, themes and minimum-size layout';

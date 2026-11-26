@@ -62,3 +62,9 @@ The cube now animates slice, wide and whole-cube turns, and the turn pad adds a 
 
 Lessons are prepared cases, like the rest of Cube Quest. Guided Roux solves of a scanned cube would need a block-finding search and are not included.
 
+## Updates without a parent's chore
+
+Most installs are set up once by a parent and then used by a child. Updates therefore happen quietly. A daily check downloads a new build in the background, and the build installs the next time the app quits; nothing pops up while a child is learning. A **Check now** button and the app-menu item show Sparkle's usual windows only on request.
+
+Checking means going online, which the app had never done. Grown-up corner says plainly what reaches GitHub (the Mac's internet address) and what never does (progress, pictures, names). One switch turns off both checking and installing. The updater starts only in a bundle that names a feed and a signing key, so development and test builds never go online.
+

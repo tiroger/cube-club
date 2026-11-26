@@ -13,4 +13,9 @@
 <key>NSHighResolutionCapable</key><true/>
 <key>NSCameraUsageDescription</key><string>Cube Club uses your camera to read the six sides of your Rubik’s Cube. Images stay on this Mac and are never saved.</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
+<key>SUFeedURL</key><string>https://github.com/tiroger/cube-club/releases/latest/download/appcast.xml</string>
+<key>SUPublicEDKey</key><string>zGbqhsYeWID4tRCq7TE6uHWsNSk5V94t2ahar1LldBs=</string>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAutomaticallyUpdate</key><true/>
+<key>SUScheduledCheckInterval</key><integer>86400</integer>
 </dict></plist>

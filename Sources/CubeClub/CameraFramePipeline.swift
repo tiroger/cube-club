@@ -1,6 +1,5 @@
 import Foundation
 import CoreImage
-import AppKit
 
 // Preview and detection have independent, bounded lanes. A lane stays occupied
 // until WebKit finishes consuming its packet, so a busy UI cannot build a queue
@@ -27,11 +26,13 @@ final class CameraFramePipeline {
 
     init(encode: ((CIImage) -> String?)? = nil, analyze: ((CIImage) -> [String: Any])? = nil, resetAnalysis: (() -> Void)? = nil) {
         let previewContext = CIContext(options: [.cacheIntermediates: false])
+        let srgb = CGColorSpace(name: CGColorSpace.sRGB)!
         let vision = CubeVision(context: CIContext(options: [.cacheIntermediates: false]))
         self.encode = encode ?? { image in
             let scaled = Self.scaled(image, width: 720)
-            guard let cgImage = previewContext.createCGImage(scaled, from: scaled.extent),
-                  let data = NSBitmapImageRep(cgImage: cgImage).representation(using: .jpeg, properties: [.compressionFactor: 0.7]) else { return nil }
+            // Core Image's encoder works on macOS and iPadOS alike.
+            guard let data = previewContext.jpegRepresentation(of: scaled, colorSpace: srgb,
+                      options: [CIImageRepresentationOption(rawValue: kCGImageDestinationLossyCompressionQuality as String): 0.7]) else { return nil }
             return "data:image/jpeg;base64," + data.base64EncodedString()
         }
         self.analyze = analyze ?? { vision.analyze(Self.scaled($0, width: 960)) }

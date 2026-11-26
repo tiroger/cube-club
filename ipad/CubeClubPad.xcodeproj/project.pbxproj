@@ -1,0 +1,160 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C1A000000000000000000001 /* CubeVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B000000000000000000001 /* CubeVision.swift */; };
+		C1A000000000000000000002 /* CameraFramePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B000000000000000000002 /* CameraFramePipeline.swift */; };
+		C1A000000000000000000003 /* ClubStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B000000000000000000003 /* ClubStorage.swift */; };
+		C1A000000000000000000004 /* Web in Resources */ = {isa = PBXBuildFile; fileRef = C1B000000000000000000004 /* Web */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		C1B000000000000000000001 /* CubeVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CubeVision.swift; path = ../Sources/CubeClub/CubeVision.swift; sourceTree = SOURCE_ROOT; };
+		C1B000000000000000000002 /* CameraFramePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraFramePipeline.swift; path = ../Sources/CubeClub/CameraFramePipeline.swift; sourceTree = SOURCE_ROOT; };
+		C1B000000000000000000003 /* ClubStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ClubStorage.swift; path = ../Sources/CubeClub/ClubStorage.swift; sourceTree = SOURCE_ROOT; };
+		C1B000000000000000000004 /* Web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Web; path = ../Sources/CubeClub/Resources/Web; sourceTree = SOURCE_ROOT; };
+		C1B000000000000000000005 /* CubeClubPad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CubeClubPad.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C1C000000000000000000001 /* CubeClubPad */ = {isa = PBXFileSystemSynchronizedRootGroup; path = CubeClubPad; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C1D000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C1E000000000000000000001 = {isa = PBXGroup; children = (C1C000000000000000000001 /* CubeClubPad */, C1E000000000000000000002 /* Shared */, C1E000000000000000000003 /* Products */); sourceTree = "<group>"; };
+		C1E000000000000000000002 /* Shared */ = {isa = PBXGroup; children = (C1B000000000000000000001 /* CubeVision.swift */, C1B000000000000000000002 /* CameraFramePipeline.swift */, C1B000000000000000000003 /* ClubStorage.swift */, C1B000000000000000000004 /* Web */); name = Shared; sourceTree = "<group>"; };
+		C1E000000000000000000003 /* Products */ = {isa = PBXGroup; children = (C1B000000000000000000005 /* CubeClubPad.app */); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C1F000000000000000000001 /* CubeClubPad */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C19000000000000000000002 /* Build configuration list for PBXNativeTarget "CubeClubPad" */;
+			buildPhases = (C17000000000000000000001 /* Sources */, C1D000000000000000000001 /* Frameworks */, C17000000000000000000002 /* Resources */);
+			buildRules = ();
+			dependencies = ();
+			fileSystemSynchronizedGroups = (C1C000000000000000000001 /* CubeClubPad */);
+			name = CubeClubPad;
+			productName = CubeClubPad;
+			productReference = C1B000000000000000000005 /* CubeClubPad.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700; };
+			buildConfigurationList = C19000000000000000000001 /* Build configuration list for PBXProject "CubeClubPad" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = C1E000000000000000000001;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C1E000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (C1F000000000000000000001 /* CubeClubPad */);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C17000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (C1A000000000000000000004 /* Web in Resources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C17000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (C1A000000000000000000001 /* CubeVision.swift in Sources */, C1A000000000000000000002 /* CameraFramePipeline.swift in Sources */, C1A000000000000000000003 /* ClubStorage.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C18000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C18000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C18000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20;
+				DEVELOPMENT_TEAM = GLG686ZJ9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cube Club";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Cube Club uses your camera to read the six sides of your Rubik’s Cube. Images stay on this iPad and are never saved.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.12.1;
+				PRODUCT_BUNDLE_IDENTIFIER = club.cube.ipad;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		C18000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 20;
+				DEVELOPMENT_TEAM = GLG686ZJ9Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Cube Club";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Cube Club uses your camera to read the six sides of your Rubik’s Cube. Images stay on this iPad and are never saved.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.12.1;
+				PRODUCT_BUNDLE_IDENTIFIER = club.cube.ipad;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C19000000000000000000001 /* Build configuration list for PBXProject "CubeClubPad" */ = {isa = XCConfigurationList; buildConfigurations = (C18000000000000000000001 /* Debug */, C18000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		C19000000000000000000002 /* Build configuration list for PBXNativeTarget "CubeClubPad" */ = {isa = XCConfigurationList; buildConfigurations = (C18000000000000000000003 /* Debug */, C18000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = C10000000000000000000001 /* Project object */;
+}

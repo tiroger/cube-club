@@ -27,7 +27,9 @@ function renderScan() {
   refreshCameraPanel();
 }
 async function solveFacelets(facelets, method = 'general') {
-  if (native)
+  // The iPad shell sets cubeClubSolverInPage: iPadOS gives JavaScriptCore no JIT inside apps,
+  // but WebKit's own process has one, so the worker is far faster there than a native solve.
+  if (native && !window.cubeClubSolverInPage)
     return bridge('solve', { facelets, method });
   if (!worker)
     worker = new Worker('solver-worker.js');

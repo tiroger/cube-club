@@ -9,9 +9,12 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 app=${1:-"$root/build/Cube Club.app"}
 binary="$app/Contents/MacOS/CubeClub"
 [[ -x "$binary" ]] || { echo "No app at $app. Run ./scripts/build.sh first." >&2; exit 1; }
-# The app loads its interface from here (App.swift webRoot).
-web="$app/Contents/Resources/CubeClub_CubeClub.bundle/Contents/Resources/Web/index.html"
-[[ -f "$web" ]] || { echo "The app bundle has no interface at ${web#"$app/"}." >&2; exit 1; }
+# The app loads its interface from one of these (App.swift webRoot): Swift 6.4 nests the
+# resource bundle's contents under Contents/Resources, Swift 6.1 keeps them at the top.
+bundle="$app/Contents/Resources/CubeClub_CubeClub.bundle"
+if [[ -f "$bundle/Contents/Resources/Web/index.html" ]]; then echo "Interface found in the nested bundle layout."
+elif [[ -f "$bundle/Web/index.html" ]]; then echo "Interface found in the flat bundle layout."
+else echo "The app has no interface in ${bundle#"$app/"}." >&2; exit 1; fi
 
 hidden="$root/.build-hidden-for-launch-test"
 moved=""

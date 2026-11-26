@@ -28,12 +28,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private var webRoot: URL { Self.webRoot }
     /// build.sh puts SwiftPM's resource bundle in Contents/Resources. Bundle.module differs between
     /// Swift versions; Swift 6.1's looks beside the .app and in the build machine's .build folder,
-    /// so GitHub-built releases crashed at launch on every other Mac. Bundle.module stays only
-    /// as the fallback for `swift run`.
-    private static let webRoot: URL = {
-        if let bundle = Bundle.main.resourceURL.flatMap({ Bundle(url: $0.appendingPathComponent("CubeClub_CubeClub.bundle")) }),
-           let web = bundle.url(forResource: "Web", withExtension: nil) {
-            return web
+    /// so GitHub-built releases crashed at launch on every other Mac. The bundle's own layout
+    /// differs too: Swift 6.1 makes it flat (Web/ at the top), Swift 6.4 nests Contents/Resources.
+    /// Bundle.module stays only as the fallback for `swift run`.
+    static let webRoot: URL = {
+        if let bundle = Bundle.main.resourceURL?.appendingPathComponent("CubeClub_CubeClub.bundle") {
+            for web in [bundle.appendingPathComponent("Contents/Resources/Web"), bundle.appendingPathComponent("Web")]
+            where FileManager.default.fileExists(atPath: web.appendingPathComponent("index.html").path) {
+                return web
+            }
         }
         return Bundle.module.url(forResource: "Web", withExtension: nil)!
     }()

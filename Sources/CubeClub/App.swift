@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private let camera = CubeCamera()
     private let speech = AVSpeechSynthesizer()
     private let storage = ClubStorage()
+    private let updates = ClubUpdates()
     private lazy var solver = CubeSolver(root: webRoot)
     private var webRoot: URL { Bundle.module.url(forResource: "Web", withExtension: nil)! }
 
@@ -32,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         menu.addItem(appItem)
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About Cube Club", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        if let updateItem = updates.menuItem() { appMenu.addItem(updateItem) }
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
@@ -110,6 +112,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             speech.speak(utterance)
             reply(id, ["ok": true])
         case "stopSpeech": speech.stopSpeaking(at: .immediate); reply(id, ["ok": true])
+        case "updateState": reply(id, updates.state)
+        case "setAutomaticUpdates":
+            guard let enabled = body["enabled"] as? Bool else { reply(id, ["error": "Unknown update setting."]); return }
+            updates.setAutomatic(enabled)
+            reply(id, updates.state)
+        case "checkForUpdates": updates.checkNow(); reply(id, updates.state)
         case "appearance":
             let mode = body["mode"] as? String ?? "system"
             guard ["system", "light", "dark"].contains(mode) else { reply(id, ["error": "Unknown appearance."]); return }

@@ -23,6 +23,8 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     var recovery = ""
     var importReply: [String: Any] = ["cancelled": true]
     var failRestore = false
+    // Stands in for Sparkle: tests choose the state the settings screen sees.
+    var updateState: [String: Any] = ["available": false]
     var launch = 0
     var accumulatedChecks = 0
     var started = false
@@ -78,6 +80,10 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
             NSApplication.shared.appearance = mode == "dark" ? NSAppearance(named:.darkAqua) : mode == "light" ? NSAppearance(named:.aqua) : nil
             reply(id,["ok": true])
         case "chromeState": shell.update(body); reply(id,["ok": true])
+        case "updateTestState": updateState = body["state"] as? [String: Any] ?? ["available": false]; reply(id,["ok": true])
+        case "updateState": reply(id,updateState)
+        case "setAutomaticUpdates": updateState["automatic"] = body["enabled"] as? Bool ?? false; reply(id,updateState)
+        case "checkForUpdates": updateState["lastChecked"] = Date().timeIntervalSince1970*1000; reply(id,updateState)
         case "shellTestCommand": shell.perform(body["command"] as! String); reply(id,["ok": true])
         case "shellTestBrandClick":
             let button = window.toolbar!.items.first { $0.itemIdentifier.rawValue == "brand" }!.view as! ClubBrandButton

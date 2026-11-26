@@ -44,7 +44,18 @@ The **Release DMG** workflow builds the installer on GitHub's macOS runners. To 
    git tag v0.10.0 && git push origin v0.10.0
    ```
 
-The workflow checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG and publishes a GitHub release with the DMG and its checksum. The release notes come from that version's `VERIFICATION.md` section. Pull requests that change packaging build the DMG as a downloadable workflow artifact without publishing anything. Like local builds, these DMGs are ad hoc signed and not notarized.
+The workflow checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG, signs it for Sparkle, and publishes a GitHub release with the DMG, its checksum, and `appcast.xml`. The release notes come from that version's `VERIFICATION.md` section. Pull requests that change packaging build the DMG as a downloadable workflow artifact without publishing anything. Like local builds, these DMGs are ad hoc signed and not notarized.
+
+### Updates
+
+[Sparkle](https://sparkle-project.org) 2 keeps installed copies current. Once a day the app reads `appcast.xml` from the latest GitHub release (`SUFeedURL` in `scripts/Info.plist`). A newer build downloads quietly and installs when Cube Club quits. In **Grown-up corner → Progress → Stay up to date**, a parent can turn this off or check now; **Cube Club → Check for Updates…** does the same. The request reaches GitHub with the Mac's IP address. No progress, pictures or names are sent, and Sparkle's system profiling stays off.
+
+Sparkle installs only DMGs signed with the project's EdDSA key; its public half is `SUPublicEDKey` in `Info.plist`.
+- **Private key:** in the release Mac's login keychain under the account `cube-club`, and in the repository secret `SPARKLE_PRIVATE_KEY`.
+- **If it's lost:** installed copies can't accept new updates and must be reinstalled by hand.
+- **Moving it:** `./.build/artifacts/sparkle/Sparkle/bin/generate_keys --account cube-club -x <file>` exports it; `-f <file>` imports it.
+
+`./scripts/make-appcast.sh` signs a DMG and writes the feed. The release workflow uses it, and so can a local test against a feed served from this Mac. Updates replace an ad hoc signed app and carry no quarantine flag, so **Open Anyway** is needed only for the first manual install. Copies older than the first Sparkle release need that one manual install.
 
 ## What’s here
 
@@ -204,6 +215,7 @@ See [verification notes](docs/VERIFICATION.md) for the native UI checks and rema
 Sources/CubeClub/App.swift                 AppKit window, camera, speech, persistence, solver bridge
 Sources/CubeClub/CameraFramePipeline.swift  Independent preview and detection, bounded WebKit delivery
 Sources/CubeClub/CubeSolver.swift          Shared background JavaScriptCore service for both solve modes
+Sources/CubeClub/Updates.swift             Sparkle updater: daily check, quiet install on quit, parent switch
 Sources/CubeClub/CubeVision.swift          Apple Vision proposals, sticker geometry, correction and sampling
 Sources/CubeClub/Resources/Web/            Entirely local WebKit teaching interface
   app.js                                  Shared state, native bridge, navigation, dialogs and button routing
@@ -229,7 +241,7 @@ Tests/                                    Model, rendering-geometry, and solver 
 docs/                                     Design direction, next features, verification notes
 ```
 
-Native AVFoundation camera access never requests microphone access. AVSpeechSynthesizer reads the instructions. UserDefaults stores lesson progress, preferences, saved sessions, calibration samples, and the most recent pre-restore recovery copy. Native Save/Open panels export and import bounded JSON backup files. A serial JavaScriptCore queue runs the solver away from the UI. The teaching interface is local HTML/CSS/Canvas in WKWebView; it makes no network requests. Navigation is restricted to bundled files and native bridge messages to the main bundled frame.
+Native AVFoundation camera access never requests microphone access. AVSpeechSynthesizer reads the instructions. UserDefaults stores lesson progress, preferences, saved sessions, calibration samples, and the most recent pre-restore recovery copy. Native Save/Open panels export and import bounded JSON backup files. A serial JavaScriptCore queue runs the solver away from the UI. The teaching interface is local HTML/CSS/Canvas in WKWebView; it makes no network requests. The only network access is the Sparkle updater described under **Updates**. Navigation is restricted to bundled files and native bridge messages to the main bundled frame.
 
 For layout work only, serve the `Web` folder with a local server. Browser preview supports the learning interface, local progress, and a worker-based solver. Camera scanning is implemented in the native Mac app.
 
@@ -241,5 +253,6 @@ For layout work only, serve the `Web` folder with a local server. Browser previe
 - [CubeSkills four-look last layer](https://www.cubeskills.com/tutorials/4-look-last-layer), [PLL algorithms](https://www.cubeskills.com/uploads/pdf/tutorials/pll-algorithms.pdf), and [lookahead progression](https://cubeskills.com/blog/lookahead-progression-framework) informed the additional topics. Explanations and generated cube diagrams are original; algorithms are checked against the local cubie model.
 - The Block Builders branch teaches the Roux method, published by Gilles Roux in 2003. Philo Li’s article [“How to Solve a Rubik’s Cube in 30 Seconds Without Memorizing”](https://medium.com/@philo2018/how-to-solve-a-rubiks-cube-in-30-seconds-without-memorizing-even-a-child-can-understand-828b73525a7b) prompted it, including the arrow idea for flipping edges. Lessons, cases and explanations are original and checked against the local cubie model.
 - [Official Rubik’s solution guides](https://www.rubiks.com/solution-guides) informed the beginner stage structure. No branded images or tutorial text were copied.
+- [Sparkle](https://github.com/sparkle-project/Sparkle) 2.10.1 installs updates; MIT license.
 - [cube.js by Petri Lehtinen and Ludovic Fernandez](https://github.com/ldez/cubejs/tree/v1.3.2), pinned to **v1.3.2**, provides the cubie model and two-phase solver. Its [MIT license](Sources/CubeClub/Resources/Web/vendor/LICENSE.cubejs) is included in source and bundled with the app.
 - Independent project; not affiliated with or endorsed by Rubik’s.

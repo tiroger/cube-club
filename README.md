@@ -27,11 +27,24 @@ To reproduce the complete app and installer build:
 ./scripts/build-dmg.sh
 ```
 
-The script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies on its first run. Later runs reuse them. Python 3.10+ and the Swift command-line tools are required. Use `./scripts/build-dmg.sh --skip-build` to package an already-built app.
+The script creates an isolated Python environment under `build/dmg-tools` and installs three pinned packaging dependencies on its first run. Later runs reuse them. Python 3.11+ and the Swift command-line tools are required. Use `./scripts/build-dmg.sh --skip-build` to package an already-built app.
 
 Output goes to `dist/`, with the version and architecture read from the app, plus a `.dmg.sha256` checksum file. Before replacing a previous image, the script checks disk-image integrity, mounts it read-only, verifies both signatures and exact app contents, and checks the Applications link, embedded background, and icon locations. Temporary images are ejected automatically. Building disk images requires normal access to macOS disk-image services; restricted command sandboxes can block them.
 
 The original background and generation prompt are in [`assets/dmg`](assets/dmg/ARTWORK.md). Finder layout coordinates are in `scripts/dmg-layout.json`.
+
+### Releases on GitHub
+
+The **Release DMG** workflow builds the installer on GitHub's macOS runners. To publish a release:
+
+1. Bump `CFBundleShortVersionString` and `CFBundleVersion` in `scripts/Info.plist` (and the other version strings), and add a `## Version X.Y.Z` section to `docs/VERIFICATION.md`.
+2. Merge to `main`, then tag that commit and push the tag:
+
+   ```sh
+   git tag v0.10.0 && git push origin v0.10.0
+   ```
+
+The workflow checks that the tag matches `Info.plist` and runs the full test suite. It then builds and verifies the DMG and publishes a GitHub release with the DMG and its checksum. The release notes come from that version's `VERIFICATION.md` section. Pull requests that change packaging build the DMG as a downloadable workflow artifact without publishing anything. Like local builds, these DMGs are ad hoc signed and not notarized.
 
 ## What’s here
 

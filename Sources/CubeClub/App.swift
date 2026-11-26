@@ -25,7 +25,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private let storage = ClubStorage()
     private let updates = ClubUpdates()
     private lazy var solver = CubeSolver(root: webRoot)
-    private var webRoot: URL { Bundle.module.url(forResource: "Web", withExtension: nil)! }
+    private var webRoot: URL { Self.webRoot }
+    /// build.sh puts SwiftPM's resource bundle in Contents/Resources. Bundle.module differs between
+    /// Swift versions; Swift 6.1's looks beside the .app and in the build machine's .build folder,
+    /// so GitHub-built releases crashed at launch on every other Mac. Bundle.module stays only
+    /// as the fallback for `swift run`.
+    private static let webRoot: URL = {
+        if let bundle = Bundle.main.resourceURL.flatMap({ Bundle(url: $0.appendingPathComponent("CubeClub_CubeClub.bundle")) }),
+           let web = bundle.url(forResource: "Web", withExtension: nil) {
+            return web
+        }
+        return Bundle.module.url(forResource: "Web", withExtension: nil)!
+    }()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menu = NSMenu()

@@ -9,6 +9,9 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 app=${1:-"$root/build/Cube Club.app"}
 binary="$app/Contents/MacOS/CubeClub"
 [[ -x "$binary" ]] || { echo "No app at $app. Run ./scripts/build.sh first." >&2; exit 1; }
+# The app loads its interface from here (App.swift webRoot).
+web="$app/Contents/Resources/CubeClub_CubeClub.bundle/Contents/Resources/Web/index.html"
+[[ -f "$web" ]] || { echo "The app bundle has no interface at ${web#"$app/"}." >&2; exit 1; }
 
 hidden="$root/.build-hidden-for-launch-test"
 moved=""

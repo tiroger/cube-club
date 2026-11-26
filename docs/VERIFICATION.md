@@ -264,3 +264,11 @@ Tested:
 - **Release workflow:** on a pull request, it imported the certificate, signed, notarized, stapled, and signed the update feed on GitHub's runner.
 
 The complete suite passed. The 0.12.0 DMG built on the release Mac was notarized and stapled. SHA-256: `ac48f8533b1de5ec8bb83b4fe11fd89a6cd1b12c303980364bf7bbed9bebf4c7`.
+
+## Version 0.12.1 — fix the launch crash
+
+Releases built on GitHub (0.10.0 through 0.12.0) crashed at launch on every Mac except the build runner. Swift 6.1's generated resource lookup searched beside the app and in the runner's `.build` folder, not in `Contents/Resources` where the build puts the interface. The app now looks there directly. Local builds were unaffected, which is why testing on the release Mac missed it.
+
+A copy of 0.12.0 crashes before it can update itself, so install 0.12.1 by hand from GitHub Releases. Your progress is kept.
+
+A new launch check hides the build folder, starts the app, and requires it to stay running. It runs in CI after every app build and before every release is notarized. On the GitHub runner it failed against 0.12.0's code and passed with the fix.

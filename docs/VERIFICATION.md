@@ -289,3 +289,25 @@ Tested:
 - **iPad simulator:** 14 checks passed with Xcode 27.2 locally and Xcode 16.4 and 26.3 on CI. They cover layout, iPad wording, the in-page solver, storage, and a clean camera answer.
 - **iPad mini (6th generation):** launch, solver timing, camera orientation through flips, and face recognition were checked by hand.
 - **TestFlight:** build 0.12.1 (20) uploaded from the release Mac and was processed as valid.
+
+## Version 0.13.1 — clearer lessons, a friendlier voice, and a welcome tour
+
+These changes come from watching a child use the iPad app.
+- **Lessons:**
+  - A lesson now goes **Watch me → Question → Your turn**, and finishing it opens the next lesson. Before, it took three runs of the same moves.
+  - A turn with no hints earns a gold star on the spot. Otherwise **Try for a gold star** stays optional. Graduating a stage still needs every star and a grown-up's real-cube check.
+  - During a turn, the move buttons sit right under the cube.
+  - After each step, one button shows what comes next.
+- **Voice:**
+  - Moves are read in kid words with the letter first, such as "R. Push the right side up." Every direction is checked against the cube model.
+  - The app uses the best installed voice. **Settings → Learning & camera → Read-aloud voice** lets a grown-up pick one, try it, and find a free Premium voice.
+  - Encouragement varies.
+- **Welcome tour:** short spotlight tours introduce the clubhouse, the first lesson and the first turn. **Show me around** in Settings replays them.
+
+The complete Mac suite passed, including:
+- the 35-lesson walkthrough of the new flow;
+- 122 voice-direction checks;
+- 40 tour checks;
+- the voice-picker checks.
+
+The 14 iPad simulator checks passed. The new screens were checked in iPad simulator screenshots.

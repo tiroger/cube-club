@@ -58,7 +58,7 @@
  }
  const canonical=x=>Array.isArray(x)?x.map(canonical):object(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,canonical(x[k])])):x;
  function encode(p,at=Date.now()){
-  return JSON.stringify({format:'club.cube.backup',version:1,appVersion:'0.13.1',createdAt:at,progress:C.normalizeProgress(p)},null,2);
+  return JSON.stringify({format:'club.cube.backup',version:1,appVersion:'0.14.0',createdAt:at,progress:C.normalizeProgress(p)},null,2);
  }
  function decode(raw){
   if(typeof raw!=='string'||raw.length>MAX_BYTES)return {error:'Choose a Cube Club backup smaller than 256 KB.'};

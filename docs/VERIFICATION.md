@@ -311,3 +311,20 @@ The complete Mac suite passed, including:
 - the voice-picker checks.
 
 The 14 iPad simulator checks passed. The new screens were checked in iPad simulator screenshots.
+
+## Version 0.14.0 — a big-tiles home, a quest map, and small celebrations
+
+- **Home:** the mascot says hello. One big **Continue** tile opens the next lesson, or the saved one. Four activity tiles and three small links cover the rest.
+- **iPad:** a top bar with Home, the gold-star count and the grown-up corner replaces the sidebar. The Mac keeps its sidebar.
+- **Cube Quest:** a stage's lessons are stops on a winding path, and the next one pulses green.
+- **Lessons:** the cube buddy's speech bubble gives each instruction, with one big button and a Watch → Question → Your turn stepper. The extra notes fold away.
+- **Guidance:** a stage's last lesson names the real next step: a missing gold star, the stage questions, the grown-up check, then the next stage. After ten idle seconds, the one thing to tap next wiggles.
+- **Celebrations:** the mascot hops with confetti when a lesson is done, a gold star pops in, and graduation gets both. Reduce motion turns every animation off.
+- **Practice cube:** it is drawn with a gentler perspective, so the faces stay square.
+
+The complete Mac suite passed, including:
+- the full quest walkthrough, which now checks each stage's last step;
+- 40 tour checks against the new home;
+- 82 Mac toolbar checks, including the minimum window size.
+
+The 14 iPad simulator checks passed. The new screens were checked in screenshots at iPad landscape and portrait, in dark mode, and at the smallest Mac window.

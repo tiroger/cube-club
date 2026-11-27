@@ -73,8 +73,9 @@
       const dpr=Math.min(window.devicePixelRatio||1,2);
       if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
       ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
-      const scale=Math.min(w/6.4,h/5.6),view=p=>rotate(rotate(p,1,this.yaw),0,this.pitch);
-      const project=p=>{const v=view(p),perspective=8/(8-v[2]);return [w/2+v[0]*scale*perspective,h/2-v[1]*scale*perspective,v[2]];};
+      // A distant camera keeps faces square; a close one (8 units) made the nearest corner loom ~1.5× larger.
+      const distance=18,scale=Math.min(w/6.4,h/5.6)*1.12,view=p=>rotate(rotate(p,1,this.yaw),0,this.pitch);
+      const project=p=>{const v=view(p),perspective=distance/(distance-v[2]);return [w/2+v[0]*scale*perspective,h/2-v[1]*scale*perspective,v[2]];};
       ctx.save();ctx.translate(w/2,h*.88);ctx.scale(1,.2);const grd=ctx.createRadialGradient(0,0,0,0,0,scale*1.7);grd.addColorStop(0,'#193f3430');grd.addColorStop(1,'#193f3400');ctx.fillStyle=grd;ctx.fillRect(-scale*2,-scale*2,scale*4,scale*4);ctx.restore();
       const facelets=this.cube.asString();const polygons=[];
       const highlights=this.highlightPieces?CubeClubNext.pieceIndices(facelets,this.highlightPieces):this.highlightIndices;

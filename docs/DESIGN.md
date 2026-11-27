@@ -76,3 +76,12 @@ Now a lesson goes **Watch me → Question → Your turn**, and finishing those o
 
 After each step, the pop-up offers one primary button for the next step. During a turn, the move pad sits directly under the cube, and Hint is a small secondary button.
 
+## First-time tours
+
+New players get three short spotlight tours, each shown once:
+- **Welcome:** the first time the app opens. It covers the clubhouse, Cube Quest, the start button, the playground, solving a real cube, and the grown-up corner.
+- **Lesson:** the first lesson. It covers the practice cube, Next move, the lesson steps, and read-aloud.
+- **Your turn:** the first turn. It covers the move buttons under the cube, and Hint.
+
+Each step dims the screen except one control, and a cube buddy explains it in one or two short sentences, read aloud when read-aloud is on. The steps show one thing at a time because a full-screen overlay labeling everything at once is too much to read for an eight-year-old. Tours never interrupt a dialog. Skip ends a tour for good, and Settings → Learning & camera → Show me around brings them back.
+

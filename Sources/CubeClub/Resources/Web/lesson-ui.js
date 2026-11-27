@@ -31,6 +31,7 @@ function startLesson(id) {
   render();
   rememberSession();
   autoSpeak(lesson.goal);
+  maybeTour('lesson');
 }
 function updateSequence() {
   if (!session || !['lesson', 'solve'].includes(session.type))
@@ -155,6 +156,8 @@ function replay(mode) {
   view.setCube(session.cube);
   updateSequence();
   rememberSession();
+  if (session.mode === 'recall')
+    maybeTour('turn');
 }
 function completion(l) {
   questCompletion(l);

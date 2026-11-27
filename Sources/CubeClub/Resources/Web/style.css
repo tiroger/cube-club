@@ -33,3 +33,17 @@ nav button{font-size:13px}.hero p{font-size:14px}.welcome-row p{font-size:13px}.
 .quest-stop.branch .quest-stop-status{margin-left:auto}
 /* During a turn the move pad sits right under the cube, above Back and Hint. */
 #stage-actions.turn-mode{display:flex;flex-direction:column}#stage-actions.turn-mode #recall-pad{order:-1}#stage-actions.turn-mode .turn-pad{margin-top:12px}#stage-actions.turn-mode .stage-controls{margin-top:10px}
+/* First-time tours: the root blocks the page, the spot's shadow dims everything but the target. */
+#tour{position:fixed;inset:0;z-index:200}
+.tour-shade{position:absolute;inset:0;background:rgba(24,40,33,.62)}
+.tour-spot{position:absolute;border-radius:16px;box-shadow:0 0 0 9999px rgba(24,40,33,.62),0 0 0 3px #f5d575;pointer-events:none;transition:all .25s ease}
+.tour-bubble{position:absolute;width:min(380px,calc(100vw - 24px));background:var(--white);color:var(--ink);border-radius:20px;padding:18px 20px 16px;box-shadow:0 18px 40px rgba(0,0,0,.25);display:grid;grid-template-columns:56px 1fr;gap:4px 14px;outline:none;transition:left .25s ease,top .25s ease}
+.tour-buddy{width:56px;height:56px;grid-row:span 1}
+.tour-words h2{font-family:var(--round);font-size:20px;margin:2px 0 6px}
+.tour-words p{margin:0;font-size:16px;line-height:1.45;color:var(--ink)}
+.tour-footer{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:12px}
+.tour-footer .button{margin-left:auto;font-size:16px;padding:12px 22px}
+.tour-dots{display:flex;gap:6px}.tour-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}.tour-dots i.on{background:var(--green)}
+@media (prefers-reduced-motion:reduce){.tour-spot,.tour-bubble{transition:none}}
+html[data-reduce-motion="true"] .tour-spot,html[data-reduce-motion="true"] .tour-bubble{transition:none}
+

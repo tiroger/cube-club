@@ -36,3 +36,18 @@ jobs:
 
       - name: Launch the app without the build folder
         run: ./scripts/smoke-launch.sh
+
+  ipad:
+    # Builds the iPad app (simulator and device release) and runs Tests/ipad-checks.js inside it.
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes | grep -i ios
+
+      - name: Test the iPad app on a simulator
+        run: ./scripts/test-ipad.sh

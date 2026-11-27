@@ -14,6 +14,7 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     private let storage = ClubStorage()
     private let speech = AVSpeechSynthesizer()
     private let camera = PadCamera()
+    private let backups = PadBackups()
 
     override init() {
         let web = Bundle.main.url(forResource: "Web", withExtension: nil)!
@@ -44,11 +45,10 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if ProcessInfo.processInfo.arguments.contains("--measure-solver") { SpikeChecks.measureSolver(in: webView) }
         #if DEBUG
-        // Debug builds only: --spike-js "<script>" runs once the page loads, to open a screen for a screenshot.
+        // Debug builds only: --debug-script "<script>" runs once the page is ready, for simulator checks.
         let arguments = ProcessInfo.processInfo.arguments
-        if let index = arguments.firstIndex(of: "--spike-js"), index + 1 < arguments.count {
+        if let index = arguments.firstIndex(of: "--debug-script"), index + 1 < arguments.count {
             webView.callAsyncJavaScript("while (!document.querySelector('#content h1')) await new Promise(r => setTimeout(r, 50));\n" + arguments[index + 1], arguments: [:], in: nil, in: .page) { _ in }
         }
         #endif
@@ -82,10 +82,24 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         case "cameraStart": camera.start(token: body["token"] as? String ?? "") { [weak self] in self?.reply(id, $0) }
         case "cameraStop": camera.stop(); reply(id, ["ok": true])
         case "updateState": reply(id, ["available": false])
-        case "spikeLog": print("[spike] \(body["text"] as? String ?? "")"); reply(id, ["ok": true])
-        case "exportBackup", "importBackup": reply(id, ["error": "Backups aren't on iPad yet."])
+        case "exportBackup":
+            guard let value = body["value"] as? String, let presenter else { reply(id, ["error": "The backup could not be read."]); return }
+            backups.export(value, from: presenter) { [weak self] in self?.reply(id, $0) }
+        case "importBackup":
+            guard let presenter else { reply(id, ["cancelled": true]); return }
+            backups.open(from: presenter) { [weak self] in self?.reply(id, $0) }
+        #if DEBUG
+        case "debugLog": print("[debug] \(body["text"] as? String ?? "")"); reply(id, ["ok": true])
+        #endif
         default: reply(id, ["error": "Unknown action."])
         }
+    }
+
+    /// The view controller that presents the Files picker.
+    private var presenter: UIViewController? {
+        var top = webView.window?.rootViewController
+        while let next = top?.presentedViewController { top = next }
+        return top
     }
 
     private func reply(_ id: Int, _ result: [String: Any]) { send("window.nativeResult", [id, result]) }
@@ -97,26 +111,6 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let webView = self?.webView else { done(); return }
             webView.callAsyncJavaScript("await window.\(function)?.(packet)", arguments: ["packet": packet], in: nil, in: .page) { _ in done() }
-        }
-    }
-}
-
-/// Spike-only measurements, run with the launch argument --measure-solver.
-enum SpikeChecks {
-    static func measureSolver(in webView: WKWebView) {
-        let script = """
-        const log = text => window.webkit.messageHandlers.native.postMessage({action: 'spikeLog', text});
-        const facelets = new Cube().move("R U F2 L' D B R2 U' F D2").asString();
-        let t = performance.now(); let first = await solveFacelets(facelets, 'general');
-        const general = performance.now() - t;
-        t = performance.now(); await solveFacelets(facelets, 'general'); const again = performance.now() - t;
-        t = performance.now(); const beginner = await solveFacelets(facelets, 'beginner'); const teach = performance.now() - t;
-        const verified = Cube.fromString(facelets).move(first.algorithm || '').isSolved();
-        log(`general first ${Math.round(general)} ms (${(first.algorithm||'').split(' ').length} moves, verified ${verified}), again ${Math.round(again)} ms, beginner ${Math.round(teach)} ms ${beginner.error ? 'error ' + beginner.error : 'ok'}; viewport ${innerWidth}x${innerHeight}; scroll ${document.documentElement.scrollWidth}`);
-        return true;
-        """
-        webView.callAsyncJavaScript(script, arguments: [:], in: nil, in: .page) { result in
-            if case .failure(let error) = result { print("[spike] measurement failed: \(error)") }
         }
     }
 }

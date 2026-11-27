@@ -71,7 +71,6 @@ final class PadCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                         let angle = coordinator.videoRotationAngleForHorizonLevelCapture
                         let landscape = Int(angle.rounded()) % 180 == 0
                         let use = landscape || !applied
-                        print("[camera] angle \(angle)\(use ? ", applied" : ", ignored (portrait)")")
                         guard use else { return }
                         applied = true
                         self?.queue.async { self?.applyRotation(angle) }

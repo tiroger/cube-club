@@ -51,7 +51,7 @@ async function solveFacelets(facelets, method = 'general') {
       clearTimeout(workerTimer);
       worker.terminate();
       worker = null;
-      resolve({ error: 'Could not start the solver. Try the native Mac app.' });
+      resolve({ error: window.cubeClubPad ? 'Could not start the solver. Please try again.' : 'Could not start the solver. Try the native Mac app.' });
     };
     worker.postMessage({ id, facelets, method });
   });

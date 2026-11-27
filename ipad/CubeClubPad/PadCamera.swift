@@ -57,11 +57,25 @@ final class PadCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                     connection.automaticallyAdjustsVideoMirroring = false
                     connection.isVideoMirrored = false
                 }
-                let coordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
-                self.rotation = coordinator
-                self.applyRotation(coordinator.videoRotationAngleForHorizonLevelCapture)
-                self.rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.new]) { [weak self] coordinator, _ in
-                    self?.queue.async { self?.applyRotation(coordinator.videoRotationAngleForHorizonLevelCapture) }
+                // The coordinator follows the device's orientation only when created and observed on
+                // the main thread; on the camera queue it reported the starting angle and never changed.
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    var applied = false
+                    let coordinator = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+                    self.rotation = coordinator
+                    self.rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]) { [weak self] coordinator, _ in
+                        // Camera buffers arrive landscape; 0° and 180° keep them landscape like the interface,
+                        // 90° and 270° would make them portrait. An iPad passes through those while being
+                        // flipped or standing upright, so keep the last landscape angle instead.
+                        let angle = coordinator.videoRotationAngleForHorizonLevelCapture
+                        let landscape = Int(angle.rounded()) % 180 == 0
+                        let use = landscape || !applied
+                        print("[camera] angle \(angle)\(use ? ", applied" : ", ignored (portrait)")")
+                        guard use else { return }
+                        applied = true
+                        self?.queue.async { self?.applyRotation(angle) }
+                    }
                 }
             }
             if !self.session.isRunning { self.session.startRunning() }

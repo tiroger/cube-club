@@ -272,3 +272,20 @@ Releases built on GitHub (0.10.0 through 0.12.0) crashed at launch on every Mac 
 A copy of 0.12.0 crashes before it can update itself, so install 0.12.1 by hand from GitHub Releases. Your progress is kept.
 
 A new launch check hides the build folder, starts the app, and requires it to stay running. It runs in CI after every app build and before every release is notarized. On the GitHub runner it failed against 0.12.0's code and passed with the fix.
+
+## Version 0.13.0 — Cube Club for iPad
+
+Cube Club now has an iPad app, shared with family and friends through TestFlight as **Cube Club Family**. It runs the same lessons, quest, playground and scanner as the Mac app, in landscape on iPadOS 17 or later.
+- **Camera:** the front camera, kept upright as the iPad turns.
+- **Solver:** it runs in the web view, because iPadOS gives apps no JIT. The first solve on an iPad mini (6th generation) takes about 1.5 s.
+- **Backups:** saved and restored through the Files app. A backup moves between Mac and iPad.
+
+The Mac app changes only inside: the camera preview's JPEG encoding uses Core Image, and backup validation is shared with the iPad.
+
+Each release tag now also uploads the iPad build to TestFlight, after the same approval as the Mac DMG.
+
+Tested:
+- **Mac:** the complete suite and the launch check passed.
+- **iPad simulator:** 14 checks passed with Xcode 27.2 locally and Xcode 16.4 and 26.3 on CI. They cover layout, iPad wording, the in-page solver, storage, and a clean camera answer.
+- **iPad mini (6th generation):** launch, solver timing, camera orientation through flips, and face recognition were checked by hand.
+- **TestFlight:** build 0.12.1 (20) uploaded from the release Mac and was processed as valid.

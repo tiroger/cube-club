@@ -40,6 +40,7 @@ Sparkle installs only DMGs signed with the project’s EdDSA key. Its public hal
 ```sh
 ./scripts/build.sh            # build/Cube Club.app
 ./scripts/test.sh             # full test suite
+./scripts/test-ipad.sh        # iPad app on a simulator (needs Xcode)
 ./scripts/build-dmg.sh        # dist/Cube-Club-<version>-<arch>.dmg (needs Python 3.11+)
 ```
 
@@ -77,6 +78,7 @@ CUBE_CLUB_SIGN_IDENTITY="Developer ID Application: Roger Lefort (GLG686ZJ9Q)" ./
 ```text
 Sources/CubeClub/                 AppKit shell, camera, vision, solver, storage, updates (Swift)
 Sources/CubeClub/Resources/Web/   The teaching interface: lessons, quest, scanning, settings (HTML/JS)
+ipad/                             iPad app (Xcode project) sharing the interface, vision and storage code
 Tests/                            Model, vision, and WebKit interface tests
 scripts/                          Build, test, signing, notarization, DMG and appcast scripts
 docs/                             Design notes and per-release verification

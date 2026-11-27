@@ -1,6 +1,7 @@
 // Native-bridge integration harness. Image loads are held until the test releases
 // them, so old-session and out-of-order image callbacks can be tested explicitly.
 var window=globalThis,document={addEventListener(){}};
+var DEVICE='Mac'; // app.js names the device; this harness loads camera-ui.js without it.
 var imageLoads=[];
 function Image(){imageLoads.push(this);this.width=800;this.height=600;}
 function setInterval(){}

@@ -27,7 +27,9 @@ function renderScan() {
   refreshCameraPanel();
 }
 async function solveFacelets(facelets, method = 'general') {
-  if (native)
+  // The iPad shell sets cubeClubSolverInPage: iPadOS gives JavaScriptCore no JIT inside apps,
+  // but WebKit's own process has one, so the worker is far faster there than a native solve.
+  if (native && !window.cubeClubSolverInPage)
     return bridge('solve', { facelets, method });
   if (!worker)
     worker = new Worker('solver-worker.js');
@@ -49,7 +51,7 @@ async function solveFacelets(facelets, method = 'general') {
       clearTimeout(workerTimer);
       worker.terminate();
       worker = null;
-      resolve({ error: 'Could not start the solver. Try the native Mac app.' });
+      resolve({ error: window.cubeClubPad ? 'Could not start the solver. Please try again.' : 'Could not start the solver. Try the native Mac app.' });
     };
     worker.postMessage({ id, facelets, method });
   });

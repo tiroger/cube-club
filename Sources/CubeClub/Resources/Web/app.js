@@ -5,6 +5,8 @@
 const { FACES, COLORS, COLOR_NAMES, FACE_NAMES, LESSONS, moves, describeMove, validate, sampleColor, normalizeProgress, escapeHTML, html, raw } = CubeClubCore;
 const $ = s => document.querySelector(s), icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const native = !!window.webkit?.messageHandlers?.native;
+// Names the device in wording such as "saved on this Mac"; the iPad shell sets cubeClubPad.
+const DEVICE = window.cubeClubPad ? 'iPad' : 'Mac';
 let progress = normalizeProgress({}), route = 'home', view = null, session = null, playing = false, busy = false, generation = 0, requestID = 0, worker = null, workerTimer = null, scan = null, lastFrame = null, lastFrameTime = 0, modalFocus = null;
 const pending = new Map();
 function bridge(action, data = {}) {
@@ -32,7 +34,7 @@ async function save() {
   if (native) {
     const result = await bridge('saveProgress', { value: JSON.stringify(progress) });
     if (result.error) {
-      toast('Could not save on this Mac. Please try again.');
+      toast('Could not save on this '+DEVICE+'. Please try again.');
       return false;
     }
     return result.ok === true;

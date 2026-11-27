@@ -68,3 +68,11 @@ Most installs are set up once by a parent and then used by a child. Updates ther
 
 Checking means going online, which the app had never done. Grown-up corner says plainly what reaches GitHub (the Mac's internet address) and what never does (progress, pictures, names). One switch turns off both checking and installing. The updater starts only in a bundle that names a feed and a signing key, so development and test builds never go online.
 
+## One clear next step in every lesson
+
+A child testing the iPad app reported that lessons asked for "the same thing over and over" and that it wasn't clear what to do next. Each lesson used to need three runs of the same moves (guided, from memory, then a no-hint check) before the next lesson opened. During the memory runs the move buttons sat below the fold, while the big button under the cube said "Give me a hint".
+
+Now a lesson goes **Watch me → Question → Your turn**, and finishing those opens the next lesson. A turn with no hints, back steps or slips earns the **gold star** on the spot. Otherwise "Try for a gold star" stays optional. Graduating a stage still needs every gold star, the stage questions and a grown-up's real-cube check, so the bar for a stage is unchanged.
+
+After each step, the pop-up offers one primary button for the next step. During a turn, the move pad sits directly under the cube, and Hint is a small secondary button.
+

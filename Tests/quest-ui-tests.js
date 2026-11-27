@@ -14,20 +14,31 @@ startLesson('hello');assert(session.lesson.id==='hello','First lesson opens');
 questStartMode('check');assert(session.mode==='guide','Cannot start check before practice');
 async function runMoves(mode){for(const move of [...session.algorithm]){await click(mode==='guide'?'[data-action="nextMove"]':`[data-turn="${move}"]`);}assert(!$('#overlay').hidden,'Completion dialog shown');}
 await runMoves('guide');assert(progress.completed.includes('hello')&&!Quest.mastered(progress,'hello'),'Guided flow only explores');
+assert($('.quiz-options')&&!$('[data-quest-mode="recall"]'),'The question comes before your turn');
 await click('[data-answer="2"]');assert(!Quest.state(progress,'hello').understood,'Wrong quiz not credited');await click('[data-answer="0"]');assert(Quest.state(progress,'hello').understood,'Correct quiz credited');
+assert($('[data-quest-mode="recall"]')&&$('#overlay').textContent.includes('your turn'),'A right answer leads to your turn');
 await click('[data-quest-mode="recall"]');await click('[data-action="hint"]');await runMoves('recall');assert(Quest.state(progress,'hello').practiced&&!Quest.mastered(progress,'hello'),'Hinted practice cannot master');
+assert(Quest.complete(progress,'hello')&&Quest.canOpen(progress,'daisy'),'Finishing your turn opens the next lesson');
+assert($('[data-action="questNext"]')&&$('[data-quest-mode="check"]'),'Done offers the next lesson and a gold star try');
 await click('[data-quest-mode="check"]');assert($('.lesson-copy>.why-panel').hidden,'Written algorithm explanation hidden in independent check');
 const index=session.index;await nextMove();assert(session.index===index,'Guide and keyboard path cannot advance recall');await autoplay();assert(session.index===index&&!playing,'Autoplay cannot advance recall');
 await click('[data-turn="U"]');await runMoves('check');assert(!Quest.mastered(progress,'hello'),'Wrong move fails independent credit');
+assert($('#overlay').textContent.includes('Almost a gold star')&&$('[data-action="questNext"]'),'A missed star still lets the lesson count');
 await click('[data-quest-mode="check"]');await click('[data-action="readStep"]');await runMoves('check');assert(!Quest.mastered(progress,'hello'),'Reading next instruction counts as assistance');
 await click('[data-quest-mode="check"]');await click('[data-turn="R"]');await click('[data-action="backMove"]');await runMoves('check');assert(!Quest.mastered(progress,'hello'),'Backtracking counts as assistance');
 await click('[data-quest-mode="check"]');await runMoves('check');assert(Quest.mastered(progress,'hello'),'Fresh independent attempt masters');
-await click('[data-action="questReturn"]');assert(Quest.canOpen(progress,'daisy'),'Mastery unlocks second lesson');
+assert($('#overlay').textContent.includes('gold star'),'The pop-up celebrates the gold star');
+await click('[data-action="questNext"]');assert(route==='lesson'&&session.lesson.id==='daisy'&&$('#overlay').hidden,'Next lesson opens from the pop-up');
 // Exercise all real screen transitions and all three lesson modes in every stage.
 for(const stageInfo of Quest.STAGES){
  for(const l of Quest.lessonsFor(stageInfo.id)){
   if(Quest.mastered(progress,l.id))continue;
-  startLesson(l.id);await runMoves('guide');await click(`[data-answer="${l.correct}"]`);await click('[data-quest-mode="recall"]');await runMoves('recall');await click('[data-quest-mode="check"]');await runMoves('check');assert(Quest.mastered(progress,l.id),l.id+' UI mastery');await click('[data-action="questReturn"]');
+  startLesson(l.id);await runMoves('guide');await click(`[data-answer="${l.correct}"]`);await click('[data-quest-mode="recall"]');
+  // Alternate: a clean turn earns the star at once; a hinted turn opens the next lesson, then a no-hint try earns the star.
+  const hinted=Quest.lessonsFor(stageInfo.id).indexOf(l)%2===1;
+  if(hinted){await click('[data-action="hint"]');await runMoves('recall');assert(Quest.complete(progress,l.id)&&!Quest.mastered(progress,l.id),l.id+' hinted turn is done without a star');await click('[data-quest-mode="check"]');await runMoves('check');}
+  else await runMoves('recall');
+  assert(Quest.mastered(progress,l.id),l.id+' UI mastery');await click($('[data-action="questNext"]')?'[data-action="questNext"]':'[data-action="questReturn"]');
  }
  assert(Quest.ready(progress,stageInfo.id),'Stage ready through real lesson screens');
  await click(`[data-quest-challenge="${stageInfo.id}"]`);

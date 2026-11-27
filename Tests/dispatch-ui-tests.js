@@ -114,6 +114,7 @@ for (let i = 0; i < 3; i++) await press({ action: 'nextMove' });
 if (!$('#overlay').hidden) await press({ action: 'closeModal' });
 await press({ mode: 'recall' });
 assert(['r', "r'", 'r2'].every(m => $(`#recall-pad [data-turn="${m}"]`)) && !$('#recall-pad [data-turn="M"]'), 'the turn pad adds only the slice turns this lesson uses');
+assert($('#stage-actions #recall-pad .turn-pad') && $('#stage-actions [data-action="hint"]').classList.contains('secondary'), 'During a turn the move pad sits under the cube and Hint is a small button');
 
 // next-ui.js patternClick: pattern practice.
 const patternCase = Next.CASES[0];

@@ -74,14 +74,22 @@ A child testing the iPad app reported that lessons asked for "the same thing ove
 
 Now a lesson goes **Watch me → Question → Your turn**, and finishing those opens the next lesson. A turn with no hints, back steps or slips earns the **gold star** on the spot. Otherwise "Try for a gold star" stays optional. Graduating a stage still needs every gold star, the stage questions and a grown-up's real-cube check, so the bar for a stage is unchanged.
 
-After each step, the pop-up offers one primary button for the next step. During a turn, the move pad sits directly under the cube, and Hint is a small secondary button.
+After each step, the pop-up offers one primary button for the next step. During a turn, the move pad sits right under the buddy's instruction, and Hint is a small secondary button. The last lesson in a stage names what comes next: a lesson still to finish, a missing gold star (which opens straight into the gold-star try), the stage questions, the grown-up check, and then the first lesson of the new stage. If nothing is tapped for about ten seconds, the one thing to tap next gives a small wiggle.
 
 ## First-time tours
 
 New players get three short spotlight tours, each shown once:
-- **Welcome:** the first time the app opens. It covers the clubhouse, Cube Quest, the start button, the playground, solving a real cube, and the grown-up corner.
-- **Lesson:** the first lesson. It covers the practice cube, Next move, the lesson steps, and read-aloud.
-- **Your turn:** the first turn. It covers the move buttons under the cube, and Hint.
+- **Welcome:** the first time the app opens. It covers the big Continue tile, the playground, solving a real cube, the quest map, and the grown-up corner.
+- **Lesson:** the first lesson. It covers the practice cube, the big next-move button, the lesson steps, and read-aloud.
+- **Your turn:** the first turn. It covers the move buttons, and Hint.
 
 Each step dims the screen except one control, and a cube buddy explains it in one or two short sentences, read aloud when read-aloud is on. The steps show one thing at a time because a full-screen overlay labeling everything at once is too much to read for an eight-year-old. Tours never interrupt a dialog. Skip ends a tour for good, and Settings → Learning & camera → Show me around brings them back.
 
+
+## Big tiles, one step at a time
+
+A launcher replaced the clubhouse dashboard. The mascot says hello, and one giant **Continue** tile opens the next lesson, or the saved lesson when there is one. Four activity tiles (Playground, Solve my cube, Case detective, Together time) and three small links (All my lessons, Solve timer, My discoveries) cover everything else. On iPad and in the browser, a top bar with Home, the wordmark, the gold-star count and the grown-up corner replaces the sidebar. The Mac keeps its sidebar, because the native toolbar, menus and shortcuts are built around it.
+
+Cube Quest shows a stage's lessons as stops on a winding path: ★ for a gold star, ✓ for done, a big pulsing green stop for the lesson to do next, and grey for locked ones. Lessons put the cube on one side. On the other, the cube buddy's speech bubble gives the instruction, with one big button below it. A stepper (1 · Watch, 2 · Question, 3 · Your turn, ★ Gold star) shows where the child is, and the "why" and "when" notes fold away.
+
+Milestones get a small celebration. The mascot hops and waves with a burst of confetti when a lesson is done, a gold star pops in when one is earned, and a stage graduation gets both. The motion is small: the mascot bobs, tiles lift when pressed, and the next stop pulses. All of it stops when Reduce motion is on in Settings or in the system.

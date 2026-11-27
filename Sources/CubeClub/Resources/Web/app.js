@@ -86,8 +86,9 @@ function updateVoice() {
 function nextLesson() {
   return Quest.nextLesson(progress);
 }
-function stage() {
-  return `<div><div class="cube-stage"><div class="stage-top"><span>YOUR PRACTICE CUBE</span><button class="icon-button" data-action="homeView" aria-label="Reset cube viewing angle" title="Reset viewing angle">${icon('cube')}</button></div><canvas id="cube-canvas" tabindex="0" role="img" aria-label="Interactive 3D cube. Drag or use arrow keys to look around. Home resets the view."></canvas><div class="stage-bottom"><span>↔ Drag to look around</span><button data-action="labels">${icon('layers')}Face letters</button></div></div><div class="face-legend">${['U', 'F', 'R'].map(f => `<span><i style="background:${COLORS[f]}"></i>${f} = ${FACE_NAMES[f]}</span>`).join('')}<span>Keep your grip the same during moves</span></div><div id="stage-actions"></div></div>`;
+// The practice cube. Lessons pass actions=false and place the step buttons beside the cube instead.
+function stage(actions = true) {
+  return `<div><div class="cube-stage"><div class="stage-top"><span>YOUR PRACTICE CUBE</span><button class="icon-button" data-action="homeView" aria-label="Reset cube viewing angle" title="Reset viewing angle">${icon('cube')}</button></div><canvas id="cube-canvas" tabindex="0" role="img" aria-label="Interactive 3D cube. Drag or use arrow keys to look around. Home resets the view."></canvas><div class="stage-bottom"><span>↔ Drag to look around</span><button data-action="labels">${icon('layers')}Face letters</button></div></div><div class="face-legend">${['U', 'F', 'R'].map(f => `<span><i style="background:${COLORS[f]}"></i>${f} = ${FACE_NAMES[f]}</span>`).join('')}<span>Keep your grip the same during moves</span></div>${actions ? '<div id="stage-actions"></div>' : ''}</div>`;
 }
 // Face turns, plus a row for each slice or two-layer turn (such as M or r) in extra.
 function turnPad(recall = false, extra = []) {
@@ -165,6 +166,9 @@ function render() {
     updateTeam();
   }
   $('.nav-count').textContent = LESSONS.length;
+  document.documentElement.dataset.route = route;
+  updateStars();
+  nudgeLater();
   updateVoice();
   window.scrollTo(0, 0);
 }
@@ -190,6 +194,7 @@ function showModal(html, cls = '', label = '') {
   if (open)
     $('#overlay .modal').scrollTop = scrollPosition;
   syncNativeChrome();
+  nudgeLater();
 }
 function closeModal() {
   if (continuityWorking)

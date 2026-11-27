@@ -23,9 +23,9 @@ async function teachingClick(d){
  if(d.solveMethod&&scan?.mode!=='check'&&scan&&!scan.solving){scan.method=d.solveMethod==='general'?'general':'beginner';renderScan();return true;}
  if(!session?.teaching)return false;
  if(d.action==='confirmTeachingStage'){
-  const s=teachingCheckpoint();if(s&&!busy){session.checkpoints.add(s.id);updateSequence();rememberSession();autoSpeak('Milestone checked. Take your time with the next little step.');}return true;
+  const s=teachingCheckpoint();if(s&&!busy){session.checkpoints.add(s.id);updateSequence();rememberSession();autoSpeak(pick(['Nice! That part matches. On to the next step.','That looks just right. Keep going!','Great checking! Take your time with the next step.']));}return true;
  }
- if(d.action==='readTeaching'){const stage=teachingCheckpoint(),chunk=teachingChunk();speak(stage?'Pause and check. '+stage.goal:session.index===session.algorithm.length?'Check all six faces of your real cube.':chunk.title+'. '+describeMove(session.algorithm[session.index])+' '+chunk.why);return true;}
+ if(d.action==='readTeaching'){const stage=teachingCheckpoint(),chunk=teachingChunk();speak(stage?'Pause and check. '+stage.goal:session.index===session.algorithm.length?'Check all six faces of your real cube.':chunk.title+'. '+speakMove(session.algorithm[session.index])+' '+chunk.why);return true;}
  if(d.action==='finishTeaching'){
   if(session.index!==session.algorithm.length||teachingCheckpoint()||session.credited)return true;
   session.credited=true;progress.solves++;rememberSession(true);updateSequence();

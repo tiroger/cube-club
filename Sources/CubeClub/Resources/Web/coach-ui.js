@@ -137,7 +137,7 @@ async function coachClick(d) {
         session.round = Coach.teamTransition(session.round, 'reveal');
         session.feedback = '';
         updateTeam();
-        autoSpeak(describeMove(session.round.algorithm[session.round.index]));
+        autoSpeak(speakMove(session.round.algorithm[session.round.index]));
       }
       break;
     case 'teamDiscussed':

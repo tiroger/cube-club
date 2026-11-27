@@ -99,7 +99,36 @@
     for (let i = 0; i < values.length; i++) out += htmlPiece(values[i]) + strings[i + 1];
     return new SafeHTML(out);
   }
-  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,validate,parity,sampleColor,normalizeProgress,normalizePreferences,resetLearningProgress,escapeHTML,html,raw};
+  // Spoken moves for children: the letter first (so notation is learned too), then a concrete
+  // direction instead of "clockwise", which depends on which side you look from. Each direction
+  // is checked against the cube model in Tests/voice-tests.js.
+  const SPOKEN={
+    R:['Push the right side up','Pull the right side down','the right side'],
+    L:['Pull the left side down','Push the left side up','the left side'],
+    U:['Turn the top to the left','Turn the top to the right','the top'],
+    D:['Turn the bottom to the right','Turn the bottom to the left','the bottom'],
+    F:['Turn the front to the right, like a steering wheel','Turn the front to the left, like a steering wheel','the front'],
+    B:['Turn the back so its top goes left','Turn the back so its top goes right','the back'],
+    M:['Pull the middle slice down','Push the middle slice up','the middle slice'],
+    E:['Turn the middle row to the right','Turn the middle row to the left','the middle row'],
+    S:['Turn the standing middle slice to the right','Turn the standing middle slice to the left','the standing middle slice'],
+    r:['Push the right two layers up','Pull the right two layers down','the right two layers'],
+    l:['Pull the left two layers down','Push the left two layers up','the left two layers'],
+    u:['Turn the top two layers to the left','Turn the top two layers to the right','the top two layers'],
+    d:['Turn the bottom two layers to the right','Turn the bottom two layers to the left','the bottom two layers'],
+    f:['Turn the front two layers to the right','Turn the front two layers to the left','the front two layers'],
+    b:['Turn the back two layers so their top goes left','Turn the back two layers so their top goes right','the back two layers'],
+    x:['Roll the whole cube so the front goes up','Roll the whole cube so the front goes down','the whole cube forward'],
+    y:['Turn the whole cube to the left','Turn the whole cube to the right','the whole cube'],
+    z:['Tilt the whole cube to the right','Tilt the whole cube to the left','the whole cube sideways'],
+  };
+  function speakMove(move){
+    const m=String(move||''),base=m[0],suffix=m.slice(1),words=SPOKEN[base];
+    if(!words||!['',"'",'2'].includes(suffix))return describeMove(m);
+    const name=base+(suffix==="'"?' prime':suffix==='2'?' two':'');
+    return `${name}. ${suffix==='2'?`Turn ${words[2]} two times`:words[suffix==="'"?1:0]}.`;
+  }
+  root.CubeClubCore={FACES,COLORS,COLOR_NAMES,FACE_NAMES,LESSONS,moves,describeMove,speakMove,validate,parity,sampleColor,normalizeProgress,normalizePreferences,resetLearningProgress,escapeHTML,html,raw};
   let initialized=false;
   root.solveCubeRequest=function(facelets) {
     const check=validate(facelets);

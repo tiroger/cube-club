@@ -2,7 +2,7 @@
 // Screens live in home-, lesson-, play- and scan-ui.js (plus the other *-ui.js
 // files); each handles its own buttons through a *Click function called below.
 // Build markup that includes anything not bundled with the app using html`...`.
-const { FACES, COLORS, COLOR_NAMES, FACE_NAMES, LESSONS, moves, describeMove, validate, sampleColor, normalizeProgress, escapeHTML, html, raw } = CubeClubCore;
+const { FACES, COLORS, COLOR_NAMES, FACE_NAMES, LESSONS, moves, describeMove, speakMove, validate, sampleColor, normalizeProgress, escapeHTML, html, raw } = CubeClubCore;
 const $ = s => document.querySelector(s), icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const native = !!window.webkit?.messageHandlers?.native;
 // Names the device in wording such as "saved on this Mac"; the iPad shell sets cubeClubPad.
@@ -61,6 +61,10 @@ function speak(text) {
     speechSynthesis.cancel();
     speechSynthesis.speak(new SpeechSynthesisUtterance(text));
   }
+}
+// A different phrase each time for lines a child hears often, so the voice sounds less like a machine.
+function pick(lines) {
+  return lines[Math.floor(Math.random() * lines.length)];
 }
 function stopSpeech() {
   if (native)
@@ -261,7 +265,7 @@ document.addEventListener('click', async (e) => {
       save();
       updateVoice();
       if (progress.voice)
-        speak('Hi, curious cuber. Let’s learn one move at a time.');
+        speak('Hi! I’ll read each move out loud. Let’s go!');
       else
         stopSpeech();
       break;

@@ -82,7 +82,7 @@ const realSpeak = window.speak;
 window.speak = text => { spoken = text; };
 await press({ action: 'readStep' });
 window.speak = realSpeak;
-assert(spoken === describeMove('R'), 'readStep reads the next move aloud');
+assert(spoken === speakMove('R') && spoken.startsWith('R. '), 'readStep reads the next move aloud in kid words');
 await press({ action: 'autoplay' });
 await press({ action: 'pause' });
 assert(!playing, 'pause stops autoplay');

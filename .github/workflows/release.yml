@@ -19,6 +19,9 @@ on:
       - scripts/make-appcast.sh
       - scripts/sign-app.sh
       - scripts/notarize.sh
+      - scripts/release-ipad.sh
+      - scripts/test-ipad.sh
+      - ipad/**
       - Package.swift
       - Package.resolved
       - assets/dmg/**
@@ -166,3 +169,56 @@ jobs:
       - name: Remove the signing keychain
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+
+  testflight:
+    # The iPad app: tested on a simulator, then archived and, for a tag, uploaded to TestFlight.
+    # Same release environment as the DMG, so one approval releases both.
+    runs-on: macos-15
+    environment: ${{ github.ref_type == 'tag' && 'release' || '' }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # App Store Connect wants recent SDKs, so iPad builds use the newest stable Xcode installed.
+      - name: Use the newest Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -viE 'beta|release_candidate' | sort -V | tail -1)
+          if [[ -n "$xcode" ]]; then echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"; fi
+
+      - name: Check the tag matches the version
+        run: |
+          xcodebuild -version | head -1
+          version=$(plutil -extract CFBundleShortVersionString raw scripts/Info.plist)
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match Info.plist version $version."
+            exit 1
+          fi
+
+      - name: Test the iPad app on a simulator
+        run: ./scripts/test-ipad.sh
+
+      - name: Upload to TestFlight
+        if: github.ref_type == 'tag'
+        env:
+          APP_STORE_CONNECT_ADMIN_KEY: ${{ secrets.APP_STORE_CONNECT_ADMIN_KEY }}
+          APP_STORE_CONNECT_ADMIN_KEY_ID: ${{ secrets.APP_STORE_CONNECT_ADMIN_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          if [[ -z "$APP_STORE_CONNECT_ADMIN_KEY" || -z "$APP_STORE_CONNECT_ADMIN_KEY_ID" ]]; then
+            echo "::error::The App Store Connect admin key secrets are not set."
+            exit 1
+          fi
+          export APP_STORE_CONNECT_ADMIN_KEY_FILE="$RUNNER_TEMP/AuthKey_admin.p8"
+          (umask 077; printf '%s\n' "$APP_STORE_CONNECT_ADMIN_KEY" > "$APP_STORE_CONNECT_ADMIN_KEY_FILE")
+          trap 'rm -f "$APP_STORE_CONNECT_ADMIN_KEY_FILE"' EXIT
+          ./scripts/release-ipad.sh
+
+      # Pull requests check that the release archive builds; nothing is signed or uploaded.
+      - name: Build the release archive
+        if: github.ref_type != 'tag'
+        run: |
+          xcodebuild -project ipad/CubeClubPad.xcodeproj -scheme CubeClubPad -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/CubeClubPad.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO -quiet
+          echo "Archived $(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$RUNNER_TEMP/CubeClubPad.xcarchive/Info.plist")"
+

@@ -3,7 +3,7 @@ const tick=()=>new Promise(r=>setTimeout(r,0));
 async function click(selector){const b=document.querySelector(selector);assert(b&&!b.disabled,'Control available: '+selector);b.click();await tick();while(busy)await tick();}
 function checked(selector){const b=document.querySelector(selector);assert(b,'Checkbox exists');b.checked=true;b.dispatchEvent(new Event('change',{bubbles:true}));}
 progress=normalizeProgress({});render();
-assert(document.querySelectorAll('[data-nav="timer"]').length===1,'Timer navigation exists');
+assert(document.querySelectorAll('.sidebar [data-nav="timer"]').length===1&&$('.home-links [data-nav="timer"]'),'Timer navigation exists');
 await click('[data-nav="learn"]');assert(document.querySelectorAll('.quest-map .quest-stop').length===4&&document.querySelectorAll('.quest-branches .quest-stop.branch').length===1,'Four main stage cards and one branch card render');
 await click('[data-quest-stage="advanced"]');assert(document.querySelector('.quest-gate').textContent.includes('Piece Partners'),'Locked stage states exact prerequisite');
 await click('[data-lesson="pll-t"]');assert(!$('#overlay').hidden&&route==='learn','Locked lesson opens preview, not lesson');await click('[data-action="questReturn"]');assert(progress.quest.selected==='beginner','Locked preview returns to an actionable stage');
@@ -36,9 +36,9 @@ for(const stageInfo of Quest.STAGES){
   startLesson(l.id);await runMoves('guide');await click(`[data-answer="${l.correct}"]`);await click('[data-quest-mode="recall"]');
   // Alternate: a clean turn earns the star at once; a hinted turn opens the next lesson, then a no-hint try earns the star.
   const hinted=Quest.lessonsFor(stageInfo.id).indexOf(l)%2===1;
-  if(hinted){await click('[data-action="hint"]');await runMoves('recall');assert(Quest.complete(progress,l.id)&&!Quest.mastered(progress,l.id),l.id+' hinted turn is done without a star');await click('[data-quest-mode="check"]');await runMoves('check');}
+  if(hinted){await click('[data-action="hint"]');await runMoves('recall');assert(Quest.complete(progress,l.id)&&!Quest.mastered(progress,l.id),l.id+' hinted turn is done without a star');if(!nextInStage(l))assert($('#overlay [data-star-lesson="'+l.id+'"]')&&!$('#overlay [data-quest-mode="check"]'),l.id+' last lesson offers one gold-star button');await click($('[data-star-lesson]')?'[data-star-lesson]':'[data-quest-mode="check"]');await runMoves('check');}
   else await runMoves('recall');
-  assert(Quest.mastered(progress,l.id),l.id+' UI mastery');await click($('[data-action="questNext"]')?'[data-action="questNext"]':'[data-action="questReturn"]');
+  assert(Quest.mastered(progress,l.id),l.id+' UI mastery');if($('[data-action="questNext"]'))await click('[data-action="questNext"]');else assert($('#overlay [data-quest-challenge="'+stageInfo.id+'"]'),l.id+' last lesson leads straight to the stage challenge');
  }
  assert(Quest.ready(progress,stageInfo.id),'Stage ready through real lesson screens');
  await click(`[data-quest-challenge="${stageInfo.id}"]`);

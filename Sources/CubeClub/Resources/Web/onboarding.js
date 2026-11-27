@@ -5,27 +5,27 @@
 const TOURS = {
   home: [
     { title: 'Hi, I’m your cube buddy!', text: 'Welcome to Cube Club. Let me show you around. It only takes a moment.' },
-    { target: 'nav [data-nav="learn"]', title: 'Your Cube Quest', text: 'Lessons go in order. Finish one, and the next one opens.' },
-    { target: '.hero-actions [data-nav="learn"]', title: 'Start here', text: 'Tap this to begin your very first lesson.' },
-    { target: 'nav [data-nav="play"]', title: 'Practice playground', text: 'Want to just play? Turn the cube any way you like.' },
-    { target: 'nav [data-action="scan"]', title: 'Solve your real cube', text: 'Got a real cube? Show it to the camera and I’ll help you solve it.' },
-    { target: '.settings-link', title: 'For grown-ups', text: 'Grown-ups can change the voice, the look, and more in here.' },
+    { target: '.home-continue', title: 'Start here', text: 'Tap the big green button to start your lesson.' },
+    { target: '.home-tiles [data-nav="play"]', title: 'Practice playground', text: 'Want to just play? Turn the cube any way you like.' },
+    { target: '.home-tiles [data-action="scan"]', title: 'Solve your real cube', text: 'Got a real cube? Show it to the camera and I’ll help you solve it.' },
+    { target: '.home-links [data-nav="learn"]', title: 'Your Cube Quest map', text: 'All your lessons live on a map. Finish one, and the next one opens.' },
+    { target: '.top-grownups, .settings-link', title: 'For grown-ups', text: 'Grown-ups can change the voice, the look, and more in here.' },
   ],
   lesson: [
     { target: '#cube-canvas', title: 'Your practice cube', text: 'Drag it to spin it around and see every side.' },
-    { target: '[data-action="nextMove"]', title: 'Watch each move', text: 'Tap Next move, and the cube shows you one turn at a time.' },
-    { target: '.mastery-strip', title: 'How a lesson works', text: 'First watch me, then answer one question, then it’s your turn!' },
+    { target: '[data-action="nextMove"]', title: 'Watch each move', text: 'Tap this big button, and the cube shows you one turn at a time.' },
+    { target: '.mastery-strip', title: 'How a lesson works', text: 'First watch, then answer one question, then it’s your turn!' },
     { target: '[data-action="readStep"]', title: 'Hear it', text: 'Tap the speaker any time to hear the move out loud.' },
   ],
   turn: [
-    { target: '#recall-pad', title: 'Your turn!', text: 'Tap the move that comes next, right here under the cube.' },
+    { target: '#recall-pad', title: 'Your turn!', text: 'Tap the move that comes next, right here.' },
     { target: '#stage-actions [data-action="hint"]', title: 'Need help?', text: 'Tap Hint to peek. Do it with no hints to earn a gold star!' },
   ],
 };
 let tour = null;
 
-function cubeBuddy() {
-  return `<svg class="tour-buddy" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 56 19v26L32 58 8 45V19z" fill="#f5d575"/><path d="M8 19l24 13v26L8 45z" fill="#fff8de"/><path d="M32 32l24-13v26L32 58z" fill="#76b398"/><path d="M32 6 56 19 32 32 8 19z" fill="#f7e19a"/><path d="M8 19 32 32 56 19M32 32v26" fill="none" stroke="#315f49" stroke-width="2.5" stroke-linejoin="round"/><path d="M32 6 56 19v26L32 58 8 45V19z" fill="none" stroke="#315f49" stroke-width="3" stroke-linejoin="round"/><circle cx="16" cy="36" r="2.2" fill="#315f49"/><circle cx="25" cy="41" r="2.2" fill="#315f49"/><path d="M15 44c3 4 7 5 10 3" fill="none" stroke="#315f49" stroke-width="2" stroke-linecap="round"/></svg>`;
+function cubeBuddy(cls = 'tour-buddy') {
+  return `<svg class="${cls}" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6 56 19v26L32 58 8 45V19z" fill="#f5d575"/><path d="M8 19l24 13v26L8 45z" fill="#fff8de"/><path d="M32 32l24-13v26L32 58z" fill="#76b398"/><path d="M32 6 56 19 32 32 8 19z" fill="#f7e19a"/><path d="M8 19 32 32 56 19M32 32v26" fill="none" stroke="#315f49" stroke-width="2.5" stroke-linejoin="round"/><path d="M32 6 56 19v26L32 58 8 45V19z" fill="none" stroke="#315f49" stroke-width="3" stroke-linejoin="round"/><circle cx="16" cy="36" r="2.2" fill="#315f49"/><circle cx="25" cy="41" r="2.2" fill="#315f49"/><path d="M15 44c3 4 7 5 10 3" fill="none" stroke="#315f49" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 
 // Starts a tour the first time it applies. Waits for the screen to settle, and never interrupts a dialog.

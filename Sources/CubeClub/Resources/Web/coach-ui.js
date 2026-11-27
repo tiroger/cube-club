@@ -1,6 +1,5 @@
 /* The three new learning experiences use the same cube, camera and progress store. */
 const Coach=CubeClubCoach;
-function discoveryLinks(){return `<div class="section-heading"><div><h2>A new way to say “aha!”</h2><p>Spot a clue. Share a turn. Learn something together.</p></div></div><div class="new-adventures"><button class="adventure-card" data-nav="detective"><span class="adventure-symbol lavender">${icon('search')}</span><span><small>LOOK BEFORE YOU TURN</small><strong>Case detective</strong><p>Can you spot what the cube is telling you?</p></span>${icon('arrow')}</button><button class="adventure-card" data-nav="team"><span class="adventure-symbol peach">${icon('team')}</span><span><small>TWO CURIOUS MINDS</small><strong>Together time</strong><p>You call the moves. Then swap places.</p></span>${icon('arrow')}</button></div>`;}
 
 function faceDiagram(state,face,highlight=[],size=''){
  const colors=Coach.faceString(state,face);

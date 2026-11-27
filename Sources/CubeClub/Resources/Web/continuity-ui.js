@@ -1,10 +1,11 @@
 /* Two saved places: a lesson never displaces a physical-cube solve. */
 const Continuity=CubeClubContinuity;
 let resumePending=null,restorePending=null,continuityWorking=false,sessionSaveFailed=false;
-function savedPlaces(){
- const saved=progress.savedSessions;
- if(!saved.lesson&&!saved.solve)return '';
- return `<section class="saved-places" aria-label="Saved adventures"><div><div class="eyebrow">RIGHT WHERE YOU LEFT OFF</div><h2>A little break. Then another turn.</h2><p>Your lesson and cube solve each keep their own place.</p></div><div class="saved-place-grid">${['lesson','solve'].filter(type=>saved[type]).map(type=>{const s=saved[type],title=type==='lesson'?LESSONS.find(l=>l.id===s.lessonID).title:s.method==='beginner'?'My beginner cube solve':'My guided cube solve';return `<article class="saved-place"><span class="saved-place-icon">${icon(type==='lesson'?'book':'cube')}</span><div><h3>${title}</h3><p>${s.index} of ${moves(s.algorithm).length} turns completed${type==='lesson'?' · '+{guide:'Watching',recall:'Your turn',check:'Gold star try'}[s.mode]:''}</p><small>Saved ${new Date(s.updatedAt).toLocaleDateString()}</small></div><button class="button primary" data-resume="${type}">Continue ${icon('arrow')}</button></article>`;}).join('')}</div></section>`;
+// Saved places to pick up. The home Continue tile already offers a saved lesson, so it can skip it.
+function savedPlaces(skip=[]){
+ const saved=progress.savedSessions,types=['lesson','solve'].filter(type=>saved[type]&&!skip.includes(type));
+ if(!types.length)return '';
+ return `<section class="saved-places" aria-label="Saved adventures"><div><div class="eyebrow">RIGHT WHERE YOU LEFT OFF</div><h2>A little break. Then another turn.</h2><p>Your lesson and cube solve each keep their own place.</p></div><div class="saved-place-grid">${types.map(type=>{const s=saved[type],title=type==='lesson'?LESSONS.find(l=>l.id===s.lessonID).title:s.method==='beginner'?'My beginner cube solve':'My guided cube solve';return `<article class="saved-place"><span class="saved-place-icon">${icon(type==='lesson'?'book':'cube')}</span><div><h3>${title}</h3><p>${s.index} of ${moves(s.algorithm).length} turns completed${type==='lesson'?' · '+{guide:'Watching',recall:'Your turn',check:'Gold star try'}[s.mode]:''}</p><small>Saved ${new Date(s.updatedAt).toLocaleDateString()}</small></div><button class="button primary" data-resume="${type}">Continue ${icon('arrow')}</button></article>`;}).join('')}</div></section>`;
 }
 function pauseControl(){return `<div class="save-place-control"><span id="session-save-status" role="status">${sessionSaveFailed?'Your latest turn is not saved yet. Try saving again.':'Your place saves after each completed turn.'}</span><button class="button secondary" data-action="pauseSession" ${busy?'disabled':''}>${icon('pause')}Save & take a break</button></div>`;}
 async function rememberSession(force=false){

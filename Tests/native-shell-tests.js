@@ -57,4 +57,19 @@ assert((await bridge('updateState')).automatic===true&&$('#auto-updates').checke
 await click('[data-action="checkForUpdates"]');await tick();
 assert(/Last checked/.test(updateText()),'Check now asks the updater and shows when it last checked');
 closeModal();
+// Read-aloud voice: the picker lists voices as text, saves a choice, previews, and explains how to get a natural voice.
+const learningTab=async()=>{await command('settings');await click('[data-settings-tab="learning"]');await tick();await tick();};
+await learningTab();
+const voiceText=()=>$('#voice-settings').textContent;
+assert(!$('#voice-settings').hidden&&$('#voice-choice').value===''&&voiceText().includes('Now using Ava'),'Voice settings show the automatic best voice');
+assert(voiceText().includes('Ava<b>')&&!$('#voice-settings b'),'Voice names are shown as text');
+assert(voiceText().includes('Premium English voice')&&voiceText().includes('Read & Speak'),'Without a natural voice, settings explain where to download one');
+$('#voice-choice').value='test.sam';$('#voice-choice').dispatchEvent(new Event('change',{bubbles:true}));await tick();
+assert((await bridge('voiceState')).chosen==='test.sam'&&$('#voice-choice').value==='test.sam'&&voiceText().includes('Now using Samantha'),'Choosing a voice reaches the native side');
+$('#voice-choice').value='';$('#voice-choice').dispatchEvent(new Event('change',{bubbles:true}));await tick();
+assert((await bridge('voiceState')).chosen==='','Best available clears the choice');
+await click('[data-action="previewVoice"]');assert((await bridge('voiceTestPreviews')).previews===1,'Try it plays the sample');
+closeModal();await bridge('voiceTestNatural',{natural:true});await learningTab();
+assert(!voiceText().includes('Premium English voice'),'With a natural voice installed, the download tip is hidden');
+closeModal();
 return checks+' Mac toolbar integration checks passed: integrated branding, original sidebar, collapse, navigation, lessons, modal guards, themes and minimum-size layout';

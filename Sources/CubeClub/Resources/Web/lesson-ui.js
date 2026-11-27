@@ -66,7 +66,7 @@ async function nextMove(source = 'guide') {
   busy = true;
   const current = session, token = generation, move = current.algorithm[current.index];
   updateSequence();
-  autoSpeak(describeMove(move));
+  autoSpeak(speakMove(move));
   await view.turn(move, turnDuration());
   if (current !== session)
     return;
@@ -169,7 +169,7 @@ async function playTurn(move) {
     if (move !== expected) {
       markAssisted();
       toast('Good try! Think about the next face, or ask for a hint.');
-      autoSpeak('Good try. Take a look at the hint.');
+      autoSpeak(pick(['Almost! Have a look at the hint.', 'Good try! The hint can help.', 'Not quite. Try another move.']));
       return;
     }
     await nextMove('recall');
@@ -179,7 +179,7 @@ async function playTurn(move) {
     return;
   busy = true;
   const current = session;
-  autoSpeak(describeMove(move));
+  autoSpeak(speakMove(move));
   await view.turn(move, turnDuration(650, 250));
   if (current !== session)
     return;
@@ -244,7 +244,7 @@ async function lessonClick(d, button) {
     }
     case 'readStep':
       markAssisted();
-      speak(session?.index < session?.algorithm.length ? describeMove(session.algorithm[session.index]) : 'You did it!');
+      speak(session?.index < session?.algorithm.length ? speakMove(session.algorithm[session.index]) : 'You did it!');
       break;
     case 'nextLesson': {
       const index = LESSONS.findIndex(l => l.id === session?.lesson?.id);

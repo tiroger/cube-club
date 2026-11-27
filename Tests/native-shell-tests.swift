@@ -25,6 +25,14 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     var failRestore = false
     // Stands in for Sparkle: tests choose the state the settings screen sees.
     var updateState: [String: Any] = ["available": false]
+    // Stands in for ClubVoice: two voices, nothing chosen yet; previews are counted.
+    var chosenVoice = ""
+    var naturalVoice = false
+    var voicePreviews = 0
+    var voiceState: [String: Any] {
+        let voices = [["id": "test.ava", "name": "Ava<b>", "quality": "Premium", "language": "en-US"], ["id": "test.sam", "name": "Samantha", "quality": "Standard", "language": "en-US"]]
+        return ["current": chosenVoice.isEmpty ? "test.ava" : chosenVoice, "chosen": chosenVoice, "natural": naturalVoice, "voices": voices]
+    }
     var launch = 0
     var accumulatedChecks = 0
     var started = false
@@ -82,6 +90,11 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
         case "chromeState": shell.update(body); reply(id,["ok": true])
         case "updateTestState": updateState = body["state"] as? [String: Any] ?? ["available": false]; reply(id,["ok": true])
         case "updateState": reply(id,updateState)
+        case "voiceState": reply(id,voiceState)
+        case "voiceTestNatural": naturalVoice = body["natural"] as? Bool ?? false; reply(id,["ok": true])
+        case "setVoice": chosenVoice = body["voice"] as? String ?? ""; reply(id,voiceState)
+        case "previewVoice": voicePreviews += 1; reply(id,["ok": true, "previews": voicePreviews])
+        case "voiceTestPreviews": reply(id,["previews": voicePreviews])
         case "setAutomaticUpdates": updateState["automatic"] = body["enabled"] as? Bool ?? false; reply(id,updateState)
         case "checkForUpdates": updateState["lastChecked"] = Date().timeIntervalSince1970*1000; reply(id,updateState)
         case "shellTestCommand": shell.perform(body["command"] as! String); reply(id,["ok": true])

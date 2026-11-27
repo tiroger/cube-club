@@ -98,7 +98,7 @@ async function solveScan() {
   session = { type: 'solve', cube, initial: cube.clone(), algorithm, index: 0, mode: 'guide', teaching: result.method === 'beginner' ? result : null, checkpoints: new Set() };
   render();
   rememberSession();
-  autoSpeak('Keep yellow on top and green facing you. Let’s take it one move at a time.');
+  autoSpeak('Hold your cube with yellow on top and green facing you. We’ll go one move at a time.');
 }
 function editScan(action) {
   if (!scan || scan.solving)

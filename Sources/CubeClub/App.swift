@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private var webView: WKWebView!
     private var shell: ClubShell!
     private let camera = CubeCamera()
-    private let speech = AVSpeechSynthesizer()
+    private let voice = ClubVoice()
     private let storage = ClubStorage()
     private let updates = ClubUpdates()
     private lazy var solver = CubeSolver(root: webRoot)
@@ -118,14 +118,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             solver.solve(facelets: facelets, method: method) { [weak self] result in self?.reply(id, result) }
         case "cameraStart": camera.start(token: body["token"] as? String ?? "") { [weak self] result in self?.reply(id, result) }
         case "cameraStop": camera.stop(); reply(id, ["ok": true])
-        case "speak":
-            speech.stopSpeaking(at: .immediate)
-            let utterance = AVSpeechUtterance(string: String((body["text"] as? String ?? "").prefix(2000)))
-            utterance.rate = 0.43
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-            speech.speak(utterance)
-            reply(id, ["ok": true])
-        case "stopSpeech": speech.stopSpeaking(at: .immediate); reply(id, ["ok": true])
+        case "speak": voice.speak(body["text"] as? String ?? ""); reply(id, ["ok": true])
+        case "stopSpeech": voice.stop(); reply(id, ["ok": true])
+        case "voiceState": reply(id, voice.state)
+        case "setVoice": voice.choose(body["voice"] as? String ?? ""); reply(id, voice.state)
+        case "previewVoice": voice.speak(ClubVoice.sample); reply(id, ["ok": true])
         case "updateState": reply(id, updates.state)
         case "setAutomaticUpdates":
             guard let enabled = body["enabled"] as? Bool else { reply(id, ["error": "Unknown update setting."]); return }
@@ -172,7 +169,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             webView.callAsyncJavaScript("await window.\(function)?.(packet)", arguments: ["packet": packet], in: nil, in: .page) { _ in completion() }
         }
     }
-    func windowWillClose(_ notification: Notification) { camera.stop(); speech.stopSpeaking(at: .immediate) }
+    func windowWillClose(_ notification: Notification) { camera.stop(); voice.stop() }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification: Notification) { camera.stop() }
 }

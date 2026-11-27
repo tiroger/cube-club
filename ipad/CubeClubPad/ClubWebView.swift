@@ -12,7 +12,7 @@ struct ClubWebView: UIViewRepresentable {
 final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     let webView: WKWebView
     private let storage = ClubStorage()
-    private let speech = AVSpeechSynthesizer()
+    private let voice = ClubVoice()
     private let camera = PadCamera()
     private let backups = PadBackups()
 
@@ -67,14 +67,11 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
                 reply(id, ["error": "Progress could not be saved."]); return
             }
             reply(id, ["ok": true])
-        case "speak":
-            speech.stopSpeaking(at: .immediate)
-            let utterance = AVSpeechUtterance(string: String((body["text"] as? String ?? "").prefix(2000)))
-            utterance.rate = 0.43
-            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-            speech.speak(utterance)
-            reply(id, ["ok": true])
-        case "stopSpeech": speech.stopSpeaking(at: .immediate); reply(id, ["ok": true])
+        case "speak": voice.speak(body["text"] as? String ?? ""); reply(id, ["ok": true])
+        case "stopSpeech": voice.stop(); reply(id, ["ok": true])
+        case "voiceState": reply(id, voice.state)
+        case "setVoice": voice.choose(body["voice"] as? String ?? ""); reply(id, voice.state)
+        case "previewVoice": voice.speak(ClubVoice.sample); reply(id, ["ok": true])
         case "appearance":
             let mode = body["mode"] as? String
             webView.window?.overrideUserInterfaceStyle = mode == "dark" ? .dark : mode == "light" ? .light : .unspecified

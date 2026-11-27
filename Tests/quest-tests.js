@@ -8,11 +8,15 @@
  const migrated=C.normalizeProgress({completed:['hello','cross-direct'],quiz:['hello'],solves:7,moves:15,learningLevel:'next'});
  ok(migrated.completed.join(',')==='hello,cross-direct'&&migrated.quiz[0]==='hello'&&migrated.solves===7&&migrated.moves===15,'old exploration and badges survive');ok(!Q.mastered(migrated,'hello')&&!Q.unlocked(migrated,'intermediate')&&!Q.timerOpen(migrated),'legacy animations and guided solves do not award mastery or timing');
  ok(!Q.finishAttempt(p,'cross',attempt('cross','guide')),'locked lesson cannot credit progress');ok(!Q.finishAttempt(p,'hello',attempt('hello','check')),'independent check requires learning and practice');
- Q.finishAttempt(p,'hello',attempt('hello','guide'));ok(Q.state(p,'hello').learned&&!Q.mastered(p,'hello')&&!Q.canOpen(p,'cross'),'watching only explores');
+ Q.finishAttempt(p,'hello',attempt('hello','guide'));ok(Q.state(p,'hello').learned&&!Q.mastered(p,'hello')&&!Q.canOpen(p,'daisy'),'watching alone does not open the next lesson');
  ok(!Q.answerConcept(p,'hello',2),'wrong explanation does not pass');Q.answerConcept(p,'hello',0);ok(Q.state(p,'hello').understood,'correct explanation persists');
  Q.finishAttempt(p,'hello',attempt('hello','recall',true));ok(Q.state(p,'hello').practiced&&!Q.mastered(p,'hello'),'hinted practice counts without mastery');
+ ok(Q.complete(p,'hello')&&Q.canOpen(p,'daisy'),'a finished turn plus the question opens the next lesson');ok(Q.nextLesson(p).id==='daisy','the suggestion moves on to the next lesson');
+ {const q=fresh();Q.finishAttempt(q,'hello',attempt('hello','guide'));Q.finishAttempt(q,'hello',attempt('hello','recall'));ok(!Q.complete(q,'hello')&&!Q.canOpen(q,'daisy'),'the question is still needed before moving on');Q.answerConcept(q,'hello',0);ok(Q.mastered(q,'hello'),'a clean turn from memory earns the gold star');}
+ {const q=fresh();Q.finishAttempt(q,'hello',attempt('hello','guide'));Q.answerConcept(q,'hello',0);Q.finishAttempt(q,'hello',attempt('hello','recall',true));for(const l of Q.lessonsFor('beginner').slice(1)){Q.finishAttempt(q,l.id,attempt(l.id,'guide'));Q.answerConcept(q,l.id,l.correct);Q.finishAttempt(q,l.id,attempt(l.id,'recall'));}
+  ok(Q.lessonsFor('beginner').every(l=>Q.complete(q,l.id))&&!Q.ready(q,'beginner'),'graduating still needs every gold star');ok(Q.nextLesson(q).id==='hello','with every lesson done, the suggestion returns to a missing star');}
  for(const bad of [{...attempt('hello','check'),assisted:true},{...attempt('hello','check'),complete:false},{...attempt('hello','check'),solved:false},{...attempt('hello','check'),turns:3},{...attempt('hello','check'),mode:'unknown'}])ok(!Q.finishAttempt(p,'hello',bad),'incomplete or assisted independent attempts rejected');
- Q.finishAttempt(p,'hello',attempt('hello','check'));ok(Q.mastered(p,'hello')&&Q.canOpen(p,'daisy'),'clean independent attempt unlocks next lesson');
+ Q.finishAttempt(p,'hello',attempt('hello','check'));ok(Q.mastered(p,'hello')&&Q.canOpen(p,'daisy'),'a clean gold star try masters the lesson');
  ok(!Q.graduate(p,'beginner')&&!Q.finishChallenge(p,'beginner',[0,1,2]),'stage checks cannot skip missing mastery');
  for(const stage of Q.STAGES){
   ok(Q.unlocked(p,stage.id),'stage unlocked after preceding graduation');

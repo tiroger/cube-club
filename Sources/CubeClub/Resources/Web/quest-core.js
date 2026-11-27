@@ -28,11 +28,14 @@
  }
  function state(p,id){const r=p.quest?.records?.[id]||{};return {learned:p.completed.includes(id),practiced:r.practiced===true,understood:r.understood===true,independent:r.independent===true};}
  function mastered(p,id){const s=state(p,id);return s.learned&&s.practiced&&s.understood&&s.independent;}
+ // Done: watched, did it from memory, answered the question. Done opens the next lesson; the gold star
+ // (independent, a turn with no hints or slips) is optional per lesson but needed to graduate a stage.
+ function complete(p,id){const s=state(p,id);return s.learned&&s.practiced&&s.understood;}
  // A main-path grant opens that stage and every earlier main stage. A branch opens only with its own grant.
  function granted(p,stage){const s=stageInfo(stage);if(!s)return false;if(s.after)return p.quest.grants.includes(stage);const i=MAIN.indexOf(s);return p.quest.grants.some(id=>MAIN.findIndex(m=>m.id===id)>=i);}
  function unlocked(p,stage){const s=stageInfo(stage);if(!s)return false;const prev=before(stage);return !prev||granted(p,stage)||p.quest.graduated.includes(stage)||p.quest.graduated.includes(prev.id);}
- function canOpen(p,id){const stage=stageFor(id),ls=lessonsFor(stage),i=ls.findIndex(l=>l.id===id);return i>=0&&unlocked(p,stage)&&(i===0||granted(p,stage)||mastered(p,id)||p.quest.graduated.includes(stage)||mastered(p,ls[i-1].id));}
- function lessonRequirement(p,id){const stage=stageFor(id),i=STAGES.findIndex(s=>s.id===stage),ls=lessonsFor(stage),n=ls.findIndex(l=>l.id===id);if(i<0)return 'Choose a lesson from Cube Quest.';if(!unlocked(p,stage))return `Graduate from ${before(stage).title} to open this stage.`;if(!canOpen(p,id))return `Master “${ls[n-1].title}” to open this lesson.`;return '';}
+ function canOpen(p,id){const stage=stageFor(id),ls=lessonsFor(stage),i=ls.findIndex(l=>l.id===id);return i>=0&&unlocked(p,stage)&&(i===0||granted(p,stage)||complete(p,id)||p.quest.graduated.includes(stage)||complete(p,ls[i-1].id));}
+ function lessonRequirement(p,id){const stage=stageFor(id),i=STAGES.findIndex(s=>s.id===stage),ls=lessonsFor(stage),n=ls.findIndex(l=>l.id===id);if(i<0)return 'Choose a lesson from Cube Quest.';if(!unlocked(p,stage))return `Graduate from ${before(stage).title} to open this stage.`;if(!canOpen(p,id))return `Finish “${ls[n-1].title}” to open this lesson.`;return '';}
  function record(p,id){return p.quest.records[id]||(p.quest.records[id]={practiced:false,understood:false,independent:false});}
  function finishAttempt(p,id,attempt){
   if(!canOpen(p,id)||!attempt||attempt.complete!==true||attempt.solved!==true)return false;
@@ -40,7 +43,8 @@
   if(attempt.turns!==n)return false;
   if(attempt.mode==='guide'){if(!p.completed.includes(id))p.completed.push(id);return true;}
   if(!state(p,id).learned)return false;
-  if(attempt.mode==='recall'){record(p,id).practiced=true;return true;}
+  // A clean turn from memory earns the gold star right away; one with hints still counts as practice.
+  if(attempt.mode==='recall'){const r=record(p,id);r.practiced=true;if(attempt.assisted===false)r.independent=true;return true;}
   if(attempt.mode==='check'&&state(p,id).practiced&&state(p,id).understood&&attempt.assisted===false){record(p,id).independent=true;return true;}
   return false;
  }
@@ -49,7 +53,7 @@
  function finishChallenge(p,id,answers){const qs=QUESTIONS[id];if(!qs||!ready(p,id)||!Array.isArray(answers)||answers.length!==qs.length||!qs.every((q,i)=>answers[i]===q.answer))return false;if(!p.quest.challenges.includes(id))p.quest.challenges.push(id);return true;}
  function graduate(p,id){if(!ready(p,id)||!p.quest.challenges.includes(id))return false;if(!p.quest.graduated.includes(id))p.quest.graduated.push(id);if(id==='beginner')p.quest.independentSolve=true;return true;}
  function grant(p,id){if(!validStage(id))return false;if(!p.quest.grants.includes(id))p.quest.grants.push(id);return true;}
- function nextLesson(p){const open=s=>unlocked(p,s.id)&&!p.quest.graduated.includes(s.id);const s=STAGES.find(s=>s.id===p.quest.selected&&open(s))||MAIN.find(open)||MAIN[MAIN.length-1];return lessonsFor(s.id).find(l=>!mastered(p,l.id))||lessonsFor(s.id)[0];}
+ function nextLesson(p){const open=s=>unlocked(p,s.id)&&!p.quest.graduated.includes(s.id);const s=STAGES.find(s=>s.id===p.quest.selected&&open(s))||MAIN.find(open)||MAIN[MAIN.length-1];const ls=lessonsFor(s.id);return ls.find(l=>!complete(p,l.id))||ls.find(l=>!mastered(p,l.id))||ls[0];}
  function timerOpen(p){return p.quest.independentSolve;}
  function addTime(p,ms,at,reflection){if(!timerOpen(p)||!Number.isFinite(ms)||ms<1000||ms>86400000||!Number.isFinite(at)||at<=0)return false;p.quest.times=normalize({times:[...p.quest.times,{ms,at,reflection}]}).times;return true;}
  const QUESTIONS={
@@ -79,5 +83,5 @@
    {prompt:'Three top edges point at one bottom edge. What fixes this arrow?',lesson:'roux-edge-arrow',choices:['M′ U M','R U R′ U′','A brand-new scramble'],answer:0}
   ]
  };
- root.CubeClubQuest={STAGES,MAIN,before,after,branchesFrom,QUESTIONS,normalize,state,mastered,stageFor,lessonsFor,granted,unlocked,canOpen,lessonRequirement,finishAttempt,answerConcept,ready,finishChallenge,graduate,grant,nextLesson,timerOpen,addTime};
+ root.CubeClubQuest={STAGES,MAIN,before,after,branchesFrom,QUESTIONS,normalize,state,mastered,complete,stageFor,lessonsFor,granted,unlocked,canOpen,lessonRequirement,finishAttempt,answerConcept,ready,finishChallenge,graduate,grant,nextLesson,timerOpen,addTime};
 })(globalThis);

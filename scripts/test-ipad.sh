@@ -57,7 +57,7 @@ xcrun simctl privacy "$device" grant camera club.cube.ipad
 # Runs the checks once and prints the app's result line, or nothing if it gave none in time.
 run_checks() {
   local log="$work/console-$1.log" launcher result=""
-  xcrun simctl launch --console-pty --terminate-running-process "$device" club.cube.ipad \
+  xcrun simctl launch --console-pty --terminate-running-process "$device" club.cube.ipad --no-tours \
     --debug-script "$(cat Tests/ipad-checks.js)" >"$log" 2>&1 &
   launcher=$!
   for _ in $(seq 1 300); do

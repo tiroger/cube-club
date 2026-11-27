@@ -222,6 +222,8 @@ document.addEventListener('click', async (e) => {
     return;
   }
   const d = button.dataset;
+  if (tourClick(d))
+    return;
   if (continuityWorking)
     return;
   if (await continuityClick(d))
@@ -366,4 +368,6 @@ document.addEventListener('keydown', e => {
   cameraPalette = JSON.parse(JSON.stringify(progress.calibration?.colors || {}));
   applyPreferences();
   render();
+  if (route === 'home')
+    maybeTour('home');
 })();

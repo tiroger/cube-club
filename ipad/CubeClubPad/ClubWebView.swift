@@ -24,6 +24,11 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubSolverInPage = true; window.cubeClubPad = true;",
                                                                 injectionTime: .atDocumentStart, forMainFrameOnly: true))
         config.allowsInlineMediaPlayback = true
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--no-tours") {
+            config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNoTours = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
+        #endif
         webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .systemBackground

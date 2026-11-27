@@ -39,6 +39,8 @@ final class NativeShellRunner: NSObject, NSApplicationDelegate, WKNavigationDele
     let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
     func applicationDidFinishLaunching(_ notification: Notification) {
         let config = WKWebViewConfiguration()
+        // First-time tours would cover the screens these tests drive; Tests/onboarding-ui-tests.js turns them back on.
+        config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNoTours=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         config.websiteDataStore = .nonPersistent()
         config.userContentController.add(self, name: "native")
         config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNativeShell=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))

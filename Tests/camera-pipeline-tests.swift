@@ -78,6 +78,8 @@ final class PreviewBenchmark: NSObject, NSApplicationDelegate, WKNavigationDeleg
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let config = WKWebViewConfiguration()
+        // First-time tours would cover the screens these tests drive; Tests/onboarding-ui-tests.js turns them back on.
+        config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNoTours=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         config.websiteDataStore = .nonPersistent()
         web = WKWebView(frame: NSRect(x: 0, y: 0, width: 1280, height: 800), configuration: config)
         web.navigationDelegate = self

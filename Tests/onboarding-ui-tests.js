@@ -1,3 +1,4 @@
+window.cubeClubVoiceAudit = true;
 // First-time tours, driven through the real screens. The harness turns tours off for every
 // other suite; this one turns them back on.
 let checks = 0;
@@ -82,4 +83,5 @@ async function click_(selector) {
   button.click();
   await pause(60);
 }
+if (voiceMissing.size) throw Error('Spoken with no recording: ' + [...voiceMissing].join(' | '));
 return checks + ' onboarding checks passed: welcome, lesson and turn tours, spotlight placement, blocked taps, keyboard, dialogs, replay and skip.';

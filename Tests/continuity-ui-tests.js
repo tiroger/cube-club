@@ -1,3 +1,4 @@
+window.cubeClubVoiceAudit = true;
 let checks=typeof previousChecks==='number'?previousChecks:0;const assert=(v,m)=>{checks++;if(!v)throw Error(m);};
 const tick=()=>new Promise(r=>setTimeout(r,0));
 async function click(selector){const b=$(selector);assert(b&&!b.disabled,'Available: '+selector);b.click();await tick();while(busy||continuityWorking)await tick();}
@@ -50,4 +51,5 @@ startLesson('hello');await nextMove();const realSave=save;save=async()=>false;aw
 // Calibration write failure rolls back both saved model and live classifier.
 const oldColors=JSON.stringify(cameraPalette);save=async()=>false;assert(!await persistCameraPalette({})&&JSON.stringify(cameraPalette)===oldColors&&progress.calibration,'Failed calibration save keeps the old classifier');save=realSave;
 for(const appearance of ['light','dark']){progress.preferences.appearance=appearance;applyPreferences();render();assert(document.documentElement.scrollWidth<=innerWidth,'Saved places fit '+appearance+' large-text minimum window');showResume('solve');assert($('.modal').scrollWidth<=$('.modal').clientWidth,'Resume diagrams fit minimum window');closeModal();}
+if (voiceMissing.size) throw Error('Spoken with no recording: ' + [...voiceMissing].join(' | '));
 return checks+' continuity UI checks passed: relaunch, exact resume, separate places, independent mastery, native backup preview/cancel/restore/recovery, calibration and failure handling.';

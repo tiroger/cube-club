@@ -249,7 +249,7 @@ async function lessonClick(d, button) {
       markAssisted();
       const text = session?.index < session?.algorithm.length ? `${session.algorithm[session.index]}: ${describeMove(session.algorithm[session.index])}` : 'You know the whole pattern!';
       toast(text);
-      speak(text);
+      speak(session?.index < session?.algorithm.length ? speakMove(session.algorithm[session.index]) : text);
       break;
     }
     case 'readStep':

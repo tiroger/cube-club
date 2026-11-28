@@ -93,3 +93,14 @@ A launcher replaced the clubhouse dashboard. The mascot says hello, and one gian
 Cube Quest shows a stage's lessons as stops on a winding path: ★ for a gold star, ✓ for done, a big pulsing green stop for the lesson to do next, and grey for locked ones. Lessons put the cube on one side. On the other, the cube buddy's speech bubble gives the instruction, with one big button below it. A stepper (1 · Watch, 2 · Question, 3 · Your turn, ★ Gold star) shows where the child is, and the "why" and "when" notes fold away.
 
 Milestones get a small celebration. The mascot hops and waves with a burst of confetti when a lesson is done, a gold star pops in when one is earned, and a stage graduation gets both. The motion is small: the mascot bobs, tiles lift when pressed, and the next stop pulses. All of it stops when Reduce motion is on in Settings or in the system.
+
+## A natural voice
+
+The device voices sounded robotic on every Mac and iPad we tried, Premium downloads included. So every line the cube buddy can say is recorded ahead of time with OpenAI's `gpt-4o-mini-tts`, in three voices: Cedar (calm, the default), Kid buddy (young and cheerful) and Marin (warm). There is no fallback to a device voice; a line without a recording stays silent.
+
+- `node voice/lines.mjs` builds the script, `voice/lines.json`, from the lessons, stages, tours, challenges and the beginner teaching plans of 600 random scrambles. Whole messages are recorded in one take for natural flow, and every sentence is also recorded on its own, so messages built from pieces are covered.
+- `python3 voice/record.py` records new or changed lines into one pack per voice (`Web/voice/<name>.mp3`, plus a `.json` of clip offsets). It needs `OPENAI_API_KEY` in a git-ignored `.env`, and `ffmpeg`. `python3 voice/check.py --fix` transcribes every clip and re-records the ones that came out wrong. `python3 voice/unpack.py` rebuilds the clip cache on a fresh checkout.
+- The page splits each message into sentences and plays the longest recorded runs. The Mac and iPad apps play the clips with `AVAudioPlayer` (`ClubVoice.swift`).
+- `scripts/test.sh` checks that every voice has every line. The UI suites fail if the app tries to say a sentence that has no recording.
+
+After changing any spoken text, run `lines.mjs`, `record.py` and `check.py --fix`, then commit the packs.

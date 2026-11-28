@@ -62,7 +62,7 @@
   }
   function normalizePreferences(input) {
     const p=input&&typeof input==='object'?input:{};
-    return {appearance:['system','light','dark'].includes(p.appearance)?p.appearance:'system',textSize:p.textSize==='large'?'large':'standard',reduceMotion:p.reduceMotion===true,autoCapture:p.autoCapture!==false};
+    return {appearance:['system','light','dark'].includes(p.appearance)?p.appearance:'system',textSize:p.textSize==='large'?'large':'standard',reduceMotion:p.reduceMotion===true,autoCapture:p.autoCapture!==false,voice:['cedar','kid','marin'].includes(p.voice)?p.voice:'cedar'};
   }
   function resetLearningProgress(progress) {
     return normalizeProgress({preferences:progress.preferences,voice:progress.voice,slow:progress.slow,labels:progress.labels,calibration:progress.calibration});

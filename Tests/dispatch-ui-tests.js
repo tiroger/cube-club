@@ -1,3 +1,4 @@
+window.cubeClubVoiceAudit = true;
 // Every click route in app.js and the per-screen *Click handlers, driven through
 // the page's single delegated click listener. Synthetic buttons carry exactly one
 // routing key, so each check proves that key reaches the right handler.
@@ -184,4 +185,5 @@ assert(scan, 'stopCamera keeps the review open');
 await press({ action: 'closeModal' });
 assert(!scan && $('#overlay').hidden, 'closeModal closes the scanner');
 
+if (voiceMissing.size) throw Error('Spoken with no recording: ' + [...voiceMissing].join(' | '));
 return checks + ' WebKit dispatch checks passed: navigation, playground, lessons, patterns, detective, together time and scan review.';

@@ -58,6 +58,9 @@ const browserVoice = {
   stop() { this.token++; this.audio?.pause(); this.audio = null; },
   async play(name, clips) {
     this.stop();
+    // Test pages without audio set cubeClubSilent: starting audio there can hang the test process.
+    if (window.cubeClubSilent)
+      return;
     const my = this.token, pack = await this.pack(name);
     if (!pack)
       return;

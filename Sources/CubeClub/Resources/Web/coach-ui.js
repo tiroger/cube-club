@@ -161,7 +161,7 @@ async function coachClick(d) {
     case 'readTeam':
       if (session?.type === 'team') {
         const r = session.round, roles = Coach.teamRoles(r.index, r.childFirst);
-        speak(r.finished ? 'You finished your shared pattern!' : `${roles.caller} calls. ${roles.turner} turns. ` + (r.phase === 'predict' ? 'Reveal the move, then predict together before turning.' : r.phase === 'turn' ? describeMove(r.algorithm[r.index]) : 'Tell each other what changed and what stayed the same.'));
+        speak(r.finished ? 'You finished your shared pattern!' : `${roles.caller} calls. ${roles.turner} turns. ` + (r.phase === 'predict' ? 'Reveal the move, then predict together before turning.' : r.phase === 'turn' ? speakMove(r.algorithm[r.index]) : 'Tell each other what changed and what stayed the same.'));
       }
       break;
     default: return false;

@@ -52,3 +52,14 @@
 :root[data-reduce-motion=true] *, :root[data-reduce-motion=true] *::before, :root[data-reduce-motion=true] *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
 @media(max-width:1100px){.settings-modal{padding:23px}.settings-section{padding:18px}.settings-reset-row{gap:16px}.settings-tabs button{padding:10px}.settings-footer{flex-wrap:wrap}:root[data-text-size=large] .bottom-grid{grid-template-columns:1fr}:root[data-text-size=large] .pattern-invite,:root[data-text-size=large] .pattern-review{flex-wrap:wrap}:root[data-text-size=large] .hero-copy{width:68%}:root[data-text-size=large] .hero-illustration{opacity:.7}}
 .voice-row select{min-width:220px;max-width:46%;font:inherit;font-size:14px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--white);color:var(--ink)}
+
+/* Read-aloud voices: one card per recorded voice. */
+.voice-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.voice-choice{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:14px;border:2px solid var(--line);border-radius:16px;background:var(--white);text-align:left;transition:transform .15s}
+.voice-choice:active{transform:scale(.97)}
+.voice-choice[aria-checked=true]{border-color:var(--green);background:var(--mint)}
+.voice-choice strong{font-size:15px}
+.voice-choice small{font-size:12px;color:var(--muted)}
+.voice-mark{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--green);margin-bottom:4px}
+.voice-choice[aria-checked=true] .voice-mark{background:var(--green);color:var(--white)}
+.voice-mark svg{width:16px;height:16px}

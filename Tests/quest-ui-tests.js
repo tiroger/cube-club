@@ -1,3 +1,4 @@
+window.cubeClubVoiceAudit = true;
 let checks=0;const assert=(v,m)=>{checks++;if(!v)throw Error(m);};
 const tick=()=>new Promise(r=>setTimeout(r,0));
 async function click(selector){const b=document.querySelector(selector);assert(b&&!b.disabled,'Control available: '+selector);b.click();await tick();while(busy)await tick();}
@@ -56,4 +57,5 @@ progress=normalizeProgress({});navigate('timer');assert(!document.querySelector(
 settings('progress');await click('[data-parent-grant="advanced"]');checked('#quest-parent');checked('#quest-observed');await click('[data-action="confirmParent"]');assert(Quest.canOpen(progress,'pll-y')&&!Quest.unlocked(progress,'speed')&&!Quest.mastered(progress,'pll-y'),'Override opens selected practice without unearned mastery');
 startLesson('pll-t');assert(document.querySelector('.piece-map'),'New last-layer case has a six-face illustration');
 assert(document.documentElement.scrollWidth<=1024,'Minimum Mac window width has no horizontal overflow');
+if (voiceMissing.size) throw Error('Spoken with no recording: ' + [...voiceMissing].join(' | '));
 return checks+' WebKit quest integration checks passed: all lessons and stages, gate entry points, hints, parent confirmations, persistence, and timing.';

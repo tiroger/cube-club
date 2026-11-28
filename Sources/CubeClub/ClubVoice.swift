@@ -1,70 +1,67 @@
 import AVFoundation
 
-/// The read-aloud voice, shared by the Mac and iPad apps. Apple's Premium and Enhanced voices sound far
-/// more natural than the compact default, but each device downloads them separately (Accessibility
-/// settings), so the best installed voice is used unless a grown-up picks another one.
-final class ClubVoice {
-    private let synthesizer = AVSpeechSynthesizer()
-    private let defaults: UserDefaults
-    private static let key = "voice.identifier"
-    static let sample = "Hi! I’m your cube buddy. R. Push the right side up!"
+/// The cube buddy's voice, shared by the Mac and iPad apps. Every line is recorded ahead of time with a
+/// natural voice (voice/record.py) and bundled; nothing falls back to the device's robotic speech voices.
+/// Each voice is one pack: its clips back to back in Web/voice/<name>.mp3, and where each clip starts and
+/// how long it is in Web/voice/<name>.json. The page works out which clips a message needs.
+final class ClubVoice: NSObject, AVAudioPlayerDelegate {
+    private let folder: URL
+    private var packs: [String: (audio: Data, clips: [String: [Int]])] = [:]
+    private var queue: [Data] = []
+    private var player: AVAudioPlayer?
+    private var token = 0
 
-    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
-
-    /// English voices worth offering, best first: Premium, then Enhanced, then standard; US English
-    /// first within each. Novelty voices (Bubbles, Whisper…) and the robotic Eloquence voices are left out.
-    static func choices() -> [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices()
-            .filter { voice in
-                guard voice.language.hasPrefix("en"),
-                      !voice.identifier.contains(".eloquence."),
-                      !voice.identifier.contains(".speech.synthesis.voice.") else { return false }
-                if #available(macOS 14, iOS 17, *) {
-                    return !voice.voiceTraits.contains(.isNoveltyVoice) && !voice.voiceTraits.contains(.isPersonalVoice)
-                }
-                return true
-            }
-            .sorted { a, b in
-                if a.quality != b.quality { return a.quality.rawValue > b.quality.rawValue }
-                if (a.language == "en-US") != (b.language == "en-US") { return a.language == "en-US" }
-                return a.name < b.name
-            }
+    init(folder: URL) {
+        self.folder = folder
+        super.init()
+        #if os(iOS)
+        // Spoken audio that plays even with the side switch on silent, and lowers other audio while it talks.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        #endif
     }
 
-    var current: AVSpeechSynthesisVoice? {
-        if let id = defaults.string(forKey: Self.key), let chosen = AVSpeechSynthesisVoice(identifier: id) { return chosen }
-        return Self.choices().first ?? AVSpeechSynthesisVoice(language: "en-US")
-    }
-
-    /// Saves a grown-up's choice; an empty or unknown identifier goes back to the automatic best voice.
-    func choose(_ identifier: String) {
-        if Self.choices().contains(where: { $0.identifier == identifier }) { defaults.set(identifier, forKey: Self.key) }
-        else { defaults.removeObject(forKey: Self.key) }
-    }
-
-    func speak(_ text: String) {
-        synthesizer.stopSpeaking(at: .immediate)
-        let utterance = AVSpeechUtterance(string: String(text.prefix(2000)))
-        utterance.voice = current
-        // A touch slower than normal speech for young listeners; much slower sounds robotic.
-        utterance.rate = 0.47
-        utterance.preUtteranceDelay = 0.05
-        synthesizer.speak(utterance)
-    }
-
-    func stop() { synthesizer.stopSpeaking(at: .immediate) }
-
-    /// For the settings picker: every choice, which one is in use, and whether a natural voice is installed.
-    var state: [String: Any] {
-        let choices = Self.choices()
-        func quality(_ voice: AVSpeechSynthesisVoice) -> String {
-            switch voice.quality { case .premium: return "Premium"; case .enhanced: return "Enhanced"; default: return "Standard" }
+    /// Plays the named clips one after another, replacing whatever was playing.
+    func speak(voice: String, clips: [String]) {
+        stop()
+        guard let pack = pack(voice) else { return }
+        queue = clips.prefix(40).compactMap { key in
+            guard let range = pack.clips[key], range.count == 2, range[0] >= 0, range[1] > 0, range[0] + range[1] <= pack.audio.count else { return nil }
+            return pack.audio.subdata(in: range[0]..<range[0] + range[1])
         }
-        return [
-            "current": current?.identifier ?? "",
-            "chosen": defaults.string(forKey: Self.key) ?? "",
-            "natural": choices.contains { $0.quality != .default },
-            "voices": choices.map { ["id": $0.identifier, "name": $0.name, "quality": quality($0), "language": $0.language] },
-        ]
+        playNext(token)
+    }
+
+    func stop() {
+        token += 1
+        queue = []
+        player?.stop()
+        player = nil
+    }
+
+    private func playNext(_ turn: Int) {
+        guard turn == token, !queue.isEmpty else { return }
+        let clip = queue.removeFirst()
+        guard let next = try? AVAudioPlayer(data: clip, fileTypeHint: AVFileType.mp3.rawValue) else { return playNext(turn) }
+        next.delegate = self
+        player = next
+        if !next.play() { playNext(turn) }
+    }
+
+    func audioPlayerDidFinishPlaying(_ finished: AVAudioPlayer, successfully flag: Bool) {
+        guard finished === player else { return }
+        // A short breath between the pieces of a longer message.
+        let turn = token
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in self?.playNext(turn) }
+    }
+
+    /// Loads a pack once. Names are plain lowercase words, so a page can't reach other files.
+    private func pack(_ name: String) -> (audio: Data, clips: [String: [Int]])? {
+        if let pack = packs[name] { return pack }
+        guard name.range(of: "^[a-z]{1,20}$", options: .regularExpression) != nil,
+              let audio = try? Data(contentsOf: folder.appendingPathComponent("\(name).mp3"), options: .mappedIfSafe),
+              let map = try? Data(contentsOf: folder.appendingPathComponent("\(name).json")),
+              let clips = try? JSONSerialization.jsonObject(with: map) as? [String: [Int]] else { return nil }
+        packs[name] = (audio, clips)
+        return packs[name]
     }
 }

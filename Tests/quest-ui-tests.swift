@@ -21,7 +21,7 @@ final class QuestUIRunner: NSObject, NSApplicationDelegate, WKNavigationDelegate
     func applicationDidFinishLaunching(_ notification: Notification) {
         let config = WKWebViewConfiguration()
         // First-time tours would cover the screens these tests drive; Tests/onboarding-ui-tests.js turns them back on.
-        config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNoTours=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        config.userContentController.addUserScript(WKUserScript(source: "window.cubeClubNoTours=true;window.cubeClubSilent=true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         config.websiteDataStore = .nonPersistent()
         config.userContentController.addUserScript(WKUserScript(source: "const realMedia=window.matchMedia.bind(window); window.matchMedia=q=>q.includes('prefers-reduced-motion')?{matches:true}:realMedia(q);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         web = WKWebView(frame: NSRect(x: 0,y: 0,width: 1024,height: 720),configuration: config)

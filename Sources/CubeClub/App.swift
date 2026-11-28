@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     private var webView: WKWebView!
     private var shell: ClubShell!
     private let camera = CubeCamera()
-    private let voice = ClubVoice()
+    private lazy var voice = ClubVoice(folder: webRoot.appendingPathComponent("voice"))
     private let storage = ClubStorage()
     private let updates = ClubUpdates()
     private lazy var solver = CubeSolver(root: webRoot)
@@ -118,11 +118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             solver.solve(facelets: facelets, method: method) { [weak self] result in self?.reply(id, result) }
         case "cameraStart": camera.start(token: body["token"] as? String ?? "") { [weak self] result in self?.reply(id, result) }
         case "cameraStop": camera.stop(); reply(id, ["ok": true])
-        case "speak": voice.speak(body["text"] as? String ?? ""); reply(id, ["ok": true])
+        case "speak": voice.speak(voice: body["voice"] as? String ?? "", clips: body["clips"] as? [String] ?? []); reply(id, ["ok": true])
         case "stopSpeech": voice.stop(); reply(id, ["ok": true])
-        case "voiceState": reply(id, voice.state)
-        case "setVoice": voice.choose(body["voice"] as? String ?? ""); reply(id, voice.state)
-        case "previewVoice": voice.speak(ClubVoice.sample); reply(id, ["ok": true])
         case "updateState": reply(id, updates.state)
         case "setAutomaticUpdates":
             guard let enabled = body["enabled"] as? Bool else { reply(id, ["error": "Unknown update setting."]); return }

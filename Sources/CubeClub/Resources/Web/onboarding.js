@@ -69,7 +69,7 @@ function showTourStep() {
   tour.target = target;
   placeTour();
   $('.tour-bubble').focus({ preventScroll: true });
-  autoSpeak(`${step.title} ${step.text}`);
+  autoSpeak(`${/[.!?]$/.test(step.title) ? step.title : step.title + '.'} ${step.text}`);
 }
 
 function visibleTarget(el) {

@@ -57,19 +57,17 @@ assert((await bridge('updateState')).automatic===true&&$('#auto-updates').checke
 await click('[data-action="checkForUpdates"]');await tick();
 assert(/Last checked/.test(updateText()),'Check now asks the updater and shows when it last checked');
 closeModal();
-// Read-aloud voice: the picker lists voices as text, saves a choice, previews, and explains how to get a natural voice.
-const learningTab=async()=>{await command('settings');await click('[data-settings-tab="learning"]');await tick();await tick();};
+// Read-aloud voice: three recorded voices; tapping one saves it and plays a sample through the native player.
+const learningTab=async()=>{await command('settings');await click('[data-settings-tab="learning"]');await tick();};
 await learningTab();
-const voiceText=()=>$('#voice-settings').textContent;
-assert(!$('#voice-settings').hidden&&$('#voice-choice').value===''&&voiceText().includes('Now using Ava'),'Voice settings show the automatic best voice');
-assert(voiceText().includes('Ava<b>')&&!$('#voice-settings b'),'Voice names are shown as text');
-assert(voiceText().includes('Premium English voice')&&voiceText().includes('Read & Speak'),'Without a natural voice, settings explain where to download one');
-$('#voice-choice').value='test.sam';$('#voice-choice').dispatchEvent(new Event('change',{bubbles:true}));await tick();
-assert((await bridge('voiceState')).chosen==='test.sam'&&$('#voice-choice').value==='test.sam'&&voiceText().includes('Now using Samantha'),'Choosing a voice reaches the native side');
-$('#voice-choice').value='';$('#voice-choice').dispatchEvent(new Event('change',{bubbles:true}));await tick();
-assert((await bridge('voiceState')).chosen==='','Best available clears the choice');
-await click('[data-action="previewVoice"]');assert((await bridge('voiceTestPreviews')).previews===1,'Try it plays the sample');
-closeModal();await bridge('voiceTestNatural',{natural:true});await learningTab();
-assert(!voiceText().includes('Premium English voice'),'With a natural voice installed, the download tip is hidden');
+const voiceCards=()=>[...document.querySelectorAll('#voice-settings [data-voice]')];
+assert(voiceCards().length===3&&$('#voice-settings [aria-checked="true"]').dataset.voice==='cedar','Voice settings offer three recorded voices, Cedar first');
+await click('[data-voice="kid"]');let heard=await bridge('voiceTestSpoken');
+assert(progress.preferences.voice==='kid'&&$('#voice-settings [aria-checked="true"]').dataset.voice==='kid','Choosing a voice saves it');
+assert(heard.voice==='kid'&&heard.clips.length===1&&heard.clips[0]===vkey(VOICE_SAMPLE),'The sample plays in one recorded take, in the chosen voice');
+assert(normalizeProgress(JSON.parse(JSON.stringify(progress))).preferences.voice==='kid','The voice choice survives a reload');
+progress.voice=true;speak('R. Push the right side up. Great thinking! Now it’s your turn. Do the same moves on your own.');heard=await bridge('voiceTestSpoken');
+assert(heard.clips.length===2&&heard.clips.every(k=>VOICE_KEYS.has(k)),'A message is played as its longest recorded pieces');
+progress.voice=false;progress.preferences.voice='cedar';
 closeModal();
 return checks+' Mac toolbar integration checks passed: integrated branding, original sidebar, collapse, navigation, lessons, modal guards, themes and minimum-size layout';

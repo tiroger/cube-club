@@ -1,3 +1,4 @@
+window.cubeClubVoiceAudit = true;
 let checks=0;const assert=(v,m)=>{checks++;if(!v)throw Error(m);};
 const tick=()=>new Promise(r=>setTimeout(r,0));
 async function click(selector){const b=$(selector);assert(b&&!b.disabled,'Available: '+selector);b.click();await tick();while(busy)await tick();}
@@ -36,4 +37,5 @@ progress=normalizeProgress({quest:{grants:['beginner']},preferences:{reduceMotio
 closeModal();newScan();await click('[data-action="demoScan"]');await click('[data-solve-method="general"]');await click('[data-action="solveScan"]');
 waits=0;while(scan?.solving&&waits++<4000)await new Promise(r=>setTimeout(r,10));
 assert(session?.type==='solve'&&!session.teaching&&session.initial.clone().move(session.algorithm.join(' ')).isSolved(),'General solution remains available through native solver');
+if (voiceMissing.size) throw Error('Spoken with no recording: ' + [...voiceMissing].join(' | '));
 return checks+' teaching UI checks passed: native solver, illustrated scan grips, method choice, milestone guards, camera review, undo, final confirmation, cancellation and custom lesson goals.';

@@ -54,27 +54,15 @@ function toast(message) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => $('#toast').classList.remove('show'), 3500);
 }
-function speak(text) {
-  if (native)
-    bridge('speak', { text });
-  else if ('speechSynthesis' in window) {
-    speechSynthesis.cancel();
-    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-  }
-}
 // A different phrase each time for lines a child hears often, so the voice sounds less like a machine.
 function pick(lines) {
   return lines[Math.floor(Math.random() * lines.length)];
 }
-function stopSpeech() {
-  if (native)
-    bridge('stopSpeech');
-  else
-    window.speechSynthesis?.cancel();
-}
 function autoSpeak(text) {
   if (progress.voice)
     speak(text);
+  else if (window.cubeClubVoiceAudit)
+    voiceAudit(text);
 }
 function updateVoice() {
   const b = $('#voice-toggle');

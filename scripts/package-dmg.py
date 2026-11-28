@@ -106,6 +106,8 @@ def main():
     if not re.fullmatch(r"[a-zA-Z0-9_-]+", arch_label):
         raise SystemExit("Unexpected app architecture.")
     app_background = APP / EMBEDDED_BACKGROUND
+    # The image is sized from the app (the voice recordings alone are over 40 MB), with room for the layout files.
+    volume_mb = int(sum(f.stat().st_size for f in APP.rglob("*") if f.is_file() and not f.is_symlink()) / 1024 / 1024 * 1.25) + 16
     if not app_background.is_file() or digest(app_background) != digest(BACKGROUND):
         shutil.copyfile(BACKGROUND, app_background)
     # Re-sign every time: it verifies the signature and its entitlements, and keeps the
@@ -119,7 +121,7 @@ def main():
         image = Path(temporary) / filename
         settings = {
             "format": "UDZO", "filesystem": "HFS+", "compression_level": 9,
-            "size": "48m", "files": [str(APP)], "symlinks": {"Applications": "/Applications"},
+            "size": f"{volume_mb}m", "files": [str(APP)], "symlinks": {"Applications": "/Applications"},
             "background": str(BACKGROUND), "create_hook": tuck_background_into_app,
             # Finder counts its title/path bars in the window bounds. Keep enough
             # room for the whole illustration even when the user's path bar is on.

@@ -328,3 +328,15 @@ The complete Mac suite passed, including:
 - 82 Mac toolbar checks, including the minimum window size.
 
 The 14 iPad simulator checks passed. The new screens were checked in screenshots at iPad landscape and portrait, in dark mode, and at the smallest Mac window.
+
+## Version 0.14.1 — a natural voice
+
+- **Read-aloud:** every line the cube buddy says is now recorded ahead of time with a natural voice, as in Wonder Lab. The device's robotic speech voices are no longer used.
+- **Three voices:** Cedar (calm, the default), Kid buddy (young and cheerful) and Marin (warm). Pick one in **Settings → Learning & camera**; tapping a voice plays a sample.
+- **Kid words everywhere:** hints and together-time turns now say moves the friendly way, such as "R. Push the right side up."
+
+Checks:
+- All 627 lines in all three voices passed a transcription check. Kid clips that ran long, because of added music or effects, were re-recorded.
+- `scripts/test.sh` passed. It now confirms that every voice has every line, and that all 1,881 clips decode with the audio player the apps use. The UI suites fail if the app tries to say a sentence with no recording.
+- The 14 iPad simulator checks passed with the voices bundled.
+- The installer image is now sized from the app, so the 42 MB of voices fit. The packaged app launched.
